@@ -49,9 +49,11 @@ def get_completion(params, messages):
 def get_answers(role: str) -> str:
 
     params = set_open_params(temperature=0.7)
-    prompt = system_prompt.replace("***field***", role)
 
-    messages = [{"role": "user", "content": prompt}]
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Job title: {role}"},
+    ]
 
     response = get_completion(params, messages)
     return response.choices[0].message.content.strip()

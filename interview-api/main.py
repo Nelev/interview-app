@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from services.get_answers import get_answers
 
 app = FastAPI()
 
 class InterviewRequest(BaseModel):
     role: str
+
 
 origins =[
     "http://localhost:5173",

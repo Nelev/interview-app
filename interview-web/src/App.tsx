@@ -6,16 +6,22 @@ import BaseLayout from "./pages/BaseLayout.tsx";
 
 function App() {
 	const [jobTitle, setJobTitle] = React.useState<string>("");
+	const [interviewQuestions, setInterviewQuestions] = React.useState<string[]>(
+		[],
+	);
 
 	const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		try {
 			const data = await postInterview(jobTitle);
-			console.log(data);
+			const questions = JSON.parse(data.response);
+			const questionsArray: string[] = Object.values(questions);
+			setInterviewQuestions(questionsArray);
 		} catch (error) {
 			console.error("Error submitting interview:", error);
 		}
 	};
+	console.log("interviewQuestions", interviewQuestions);
 	return (
 		<BaseLayout>
 			<form onSubmit={handleSubmit}>
@@ -26,6 +32,16 @@ function App() {
 				/>
 				<Button type="submit">Submit</Button>
 			</form>
+			{interviewQuestions.length > 0 && (
+				<div>
+					<h2>Interview Questions:</h2>
+					<ul>
+						{interviewQuestions.map((question, index) => (
+							<li key={index}>{question}</li>
+						))}
+					</ul>
+				</div>
+			)}
 		</BaseLayout>
 	);
 }
