@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from services.get_answers import get_answers        
+from pydantic import BaseModel
+from services.get_answers import get_answers
 
 app = FastAPI()
+
+class InterviewRequest(BaseModel):
+    role: str
 
 origins =[
     "http://localhost:5173",
@@ -18,8 +22,8 @@ app.add_middleware(
 )
 
 @app.post("/interview")
-def read_root():
-    response = get_answers("What was OKT3 originally sourced from?")
+def read_root(request: InterviewRequest):
+    response = get_answers(request.role)
     return {"response": response}
 
 

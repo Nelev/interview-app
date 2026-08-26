@@ -1,8 +1,10 @@
 import os
+
 from dotenv import load_dotenv
 from openai import OpenAI
+from prompts.system_prompt import system_prompt
 
-load_dotenv()  # Load environment variables from .env file
+load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 client = OpenAI(
@@ -44,13 +46,10 @@ def get_completion(params, messages):
     return response
 
 
-def get_answers(question: str) -> str:
+def get_answers(role: str) -> str:
 
     params = set_open_params(temperature=0.7)
-    prompt = """Answer the question based on the context below. Keep the answer short and concise. Respond "Unsure about answer" if not sure about the answer.
-            Context: Teplizumab traces its roots to a New Jersey drug company called Ortho Pharmaceutical. There, scientists generated an early version of the antibody, dubbed OKT3. Originally sourced from mice, the molecule was able to bind to the surface of T cells and limit their cell-killing potential. In 1986, it was approved to help prevent organ rejection after kidney transplants, making it the first therapeutic antibody allowed for human use.
-            Question: What was OKT3 originally sourced from?
-            Answer:"""
+    prompt = system_prompt.replace("***field***", role)
 
     messages = [{"role": "user", "content": prompt}]
 
