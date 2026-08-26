@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { postInterview } from "./api/assistant.ts";
 
 function App() {
@@ -12,7 +13,7 @@ function App() {
 	};
 	return (
 		<form onSubmit={handleSubmit}>
-			<button type="submit">Submit</button>
+			<Button type="submit">Submit</Button>
 		</form>
 	);
 }
