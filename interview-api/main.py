@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from services.get_answers import get_answers        
 
 app = FastAPI()
 
@@ -18,7 +19,8 @@ app.add_middleware(
 
 @app.post("/interview")
 def read_root():
-    return {"Hello": "World"}
+    response = get_answers("What was OKT3 originally sourced from?")
+    return {"response": response}
 
 
 @app.get("/items/{item_id}")
