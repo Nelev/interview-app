@@ -10,7 +10,6 @@ const postInterview = async (role: string) => {
 	if (!response.ok) {
 		throw new Error("Failed to post interview");
 	}
-
 	return response.json();
 };
 
