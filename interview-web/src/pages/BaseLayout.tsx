@@ -14,10 +14,10 @@ const BaseLayout = ({ children }: BaseLayoutProps) => {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-			<main className="flex-1">
+			<SidebarInset>
 				<SidebarTrigger />
 				{children}
-			</main>
+			</SidebarInset>
 		</SidebarProvider>
 	);
 };

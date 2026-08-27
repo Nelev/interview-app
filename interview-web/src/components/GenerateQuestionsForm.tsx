@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
@@ -9,33 +10,44 @@ import { Input } from "@/components/ui/input";
 import { postInterview } from "../api/assistant.ts";
 import { Slider } from "./ui/slider";
 
+// Shared with App, which reads this mutation's result via useMutationState.
+export const INTERVIEW_MUTATION_KEY = ["interview"] as const;
+
 const GenerateQuestionsForm = () => {
-	const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
+	const mutation = useMutation({
+		mutationKey: INTERVIEW_MUTATION_KEY,
+		mutationFn: postInterview,
+	});
+
+	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		try {
-			const fd = new FormData(event.currentTarget);
-			const jobTitle = fd.get("jobTitle") as string;
-			const data = await postInterview(jobTitle);
-			const questions = JSON.parse(data.response);
-			const questionsArray: string[] = Object.values(questions);
-			// setInterviewQuestions(questionsArray);
-		} catch (error) {
-			console.error("Error submitting interview:", error);
+		const formData = new FormData(event.currentTarget);
+		const jobTitle = String(formData.get("jobTitle") ?? "").trim();
+		if (!jobTitle) {
+			return;
 		}
+		mutation.mutate(jobTitle);
 	};
+
 	return (
 		<form onSubmit={handleSubmit}>
 			<FieldGroup>
 				<Field>
 					<FieldLabel>Job Title</FieldLabel>
-					<Input name="jobTitle" required />
+					<Input name="jobTitle" required disabled={mutation.isPending} />
 					<FieldDescription>
 						Enter your job title to generate common interview questions.
 					</FieldDescription>
 				</Field>
 				<Field>
 					<FieldLabel>Temperature</FieldLabel>
-					<Slider name="temperature" min={0} max={1} step={0.1} defaultValue={[0.5]} />
+					<Slider
+						name="temperature"
+						min={0}
+						max={1}
+						step={0.1}
+						defaultValue={[0.5]}
+					/>
 				</Field>
 				<Field>
 					<FieldLabel>Top p</FieldLabel>
@@ -43,14 +55,33 @@ const GenerateQuestionsForm = () => {
 				</Field>
 				<Field>
 					<FieldLabel>Frequency Penalty</FieldLabel>
-					<Slider name="frequencyPenalty" min={0} max={1} step={0.1} defaultValue={[0.5]} />
+					<Slider
+						name="frequencyPenalty"
+						min={0}
+						max={1}
+						step={0.1}
+						defaultValue={[0.5]}
+					/>
 				</Field>
 				<Field>
 					<FieldLabel>Presence Penalty</FieldLabel>
-					<Slider name="presencePenalty" min={0} max={1} step={0.1} defaultValue={[0.5]} />
+					<Slider
+						name="presencePenalty"
+						min={0}
+						max={1}
+						step={0.1}
+						defaultValue={[0.5]}
+					/>
 				</Field>
 				<Field>
-					<Button type="submit">Ask</Button>
+					<Button type="submit" disabled={mutation.isPending}>
+						{mutation.isPending ? "Generating…" : "Ask"}
+					</Button>
+					{mutation.isError && (
+						<FieldDescription>
+							Could not generate questions. Please try again.
+						</FieldDescription>
+					)}
 				</Field>
 			</FieldGroup>
 		</form>
