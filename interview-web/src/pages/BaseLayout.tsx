@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
-import Header from "@/components/Header";
+import AppSidebar from "@/components/AppSidebar";
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 interface BaseLayoutProps {
 	children: ReactNode;
@@ -7,10 +12,13 @@ interface BaseLayoutProps {
 
 const BaseLayout = ({ children }: BaseLayoutProps) => {
 	return (
-		<div className="flex flex-col min-h-screen">
-			<Header />
-			<main className="flex-1">{children}</main>
-		</div>
+		<SidebarProvider>
+			<AppSidebar />
+			<SidebarInset>
+				<SidebarTrigger />
+				{children}
+			</SidebarInset>
+		</SidebarProvider>
 	);
 };
 
