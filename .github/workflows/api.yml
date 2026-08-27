@@ -1,0 +1,87 @@
+name: API
+
+# Path filters keep this workflow off frontend-only changes. The workflow file
+# itself is included so edits to the pipeline still validate themselves.
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "interview-api/**"
+      - ".github/workflows/api.yml"
+  pull_request:
+    paths:
+      - "interview-api/**"
+      - ".github/workflows/api.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: interview-api
+
+    env:
+      # services/get_answers.py constructs the OpenAI client at import time, so
+      # the app cannot be imported without credentials. This placeholder is
+      # never used for a request - no call leaves the runner. Making the client
+      # lazy would remove the need for this.
+      OPENROUTER_API_KEY: ci-placeholder-not-a-real-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: interview-api/uv.lock
+
+      # Installs the interpreter pinned in .python-version (3.14).
+      - name: Install Python
+        run: uv python install
+
+      # --locked fails if uv.lock is out of date with pyproject.toml, the
+      # equivalent of yarn's --frozen-lockfile.
+      - name: Install dependencies
+        run: uv sync --locked
+
+      # No Python linter is configured yet. Adding ruff to pyproject.toml
+      # activates both steps with no change to this workflow.
+      - name: Lint and format
+        run: |
+          if grep -q "ruff" pyproject.toml; then
+            uv run ruff check .
+            uv run ruff format --check .
+          else
+            echo "::notice::ruff not configured in pyproject.toml - skipping lint and format."
+          fi
+
+      # Python has no build step, so the equivalent gate is: does every module
+      # compile, and does the app actually assemble? The second catches broken
+      # imports, bad decorators and route conflicts that byte-compiling misses.
+      - name: Compile all modules
+        run: uv run python -m compileall -q . -x '\.venv'
+
+      - name: Import application
+        run: uv run python -c "import main; print(f'{len(main.app.routes)} routes registered')"
+
+      # Runs nothing today and passes. Adding pytest to pyproject.toml or a
+      # tests/ directory activates it.
+      - name: Test
+        run: |
+          if [ -d tests ] || grep -q "pytest" pyproject.toml; then
+            uv run pytest -q
+          else
+            echo "::notice::No tests found - skipping."
+          fi

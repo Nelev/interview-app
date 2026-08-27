@@ -14,7 +14,7 @@
 	},
 	"linter": {
 		"enabled": true,
-		"includes": ["**", "!src/components/ui/**"],
+		"includes": ["**", "!src/components/ui/**", "!public/**"],
 		"rules": {
 			"preset": "recommended"
 		}
