@@ -40,8 +40,11 @@ jobs:
         with:
           # Read from .nvmrc so CI and local development cannot drift apart.
           node-version-file: interview-web/.nvmrc
-          cache: yarn
-          cache-dependency-path: interview-web/yarn.lock
+          # Dependency caching is deliberately OFF. The Yarn 1 cache for this
+          # dependency set is ~300MB across ~18k small files, and the post-job
+          # save step routinely stalls tarring and uploading it - for longer
+          # than a cold install takes. Revisit only if install time becomes the
+          # bottleneck, and prefer caching node_modules keyed on yarn.lock.
 
       # --frozen-lockfile fails if yarn.lock does not match package.json,
       # so a hand-edited manifest cannot slip through.
