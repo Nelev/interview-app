@@ -23,11 +23,6 @@ app.add_middleware(
 )
 
 @app.post("/interview")
-def read_root(request: InterviewRequest):
+def post_interview(request: InterviewRequest):
     response = get_answers(request.role)
     return {"response": response}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
