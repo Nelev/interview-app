@@ -7,19 +7,22 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useQuestionsStore } from "@/store/store.ts";
 import { postInterview } from "../api/assistant.ts";
 import { Slider } from "./ui/slider";
-
 // Shared with App, which reads this mutation's result via useMutationState.
 export const INTERVIEW_MUTATION_KEY = ["interview"] as const;
 
 const GenerateQuestionsForm = () => {
+	const setQuestions = useQuestionsStore((state) => state.setQuestions);
+
 	const mutation = useMutation({
 		mutationKey: INTERVIEW_MUTATION_KEY,
 		mutationFn: postInterview,
+		onSuccess: (questions, role) => setQuestions(role, questions),
 	});
 
-	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		const formData = new FormData(event.currentTarget);
 		const jobTitle = String(formData.get("jobTitle") ?? "").trim();
