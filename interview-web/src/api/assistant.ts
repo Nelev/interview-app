@@ -21,13 +21,19 @@ const parseQuestions = (raw: string): string[] => {
 	return values.filter((value): value is string => typeof value === "string");
 };
 
-const postInterview = async (role: string): Promise<string[]> => {
+const postInterview = async (parameters: {
+	role: string;
+	temperature: string;
+	topP: string;
+	frequencyPenalty: string;
+	presencePenalty: string;
+}): Promise<string[]> => {
 	const response = await fetch(API_URL, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 		},
-		body: JSON.stringify({ role }),
+		body: JSON.stringify({ ...parameters }),
 	});
 
 	if (!response.ok) {

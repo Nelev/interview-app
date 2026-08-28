@@ -1,4 +1,4 @@
-MAX_JOB_TITLE_LENGTH = 15
+MAX_JOB_TITLE_LENGTH = 60
 
 SUSPICIOUS_PATTERNS = [
     "ignore previous instructions",
