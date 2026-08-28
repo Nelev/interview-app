@@ -2,11 +2,13 @@ import { useMutationState } from "@tanstack/react-query";
 import { CircleAlert, ClipboardList, Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuestionsStore } from "@/store/store.ts";
 import { INTERVIEW_MUTATION_KEY } from "./components/GenerateQuestionsForm.tsx";
 import BaseLayout from "./pages/BaseLayout.tsx";
 
-type InterviewRun = {
-	status: "idle" | "pending" | "success" | "error";
+type RequestStatus = "idle" | "pending" | "success" | "error";
+
+type QuestionListProps = {
 	questions: string[];
 	role: string;
 };
@@ -64,7 +66,7 @@ const ErrorState = () => (
 	</output>
 );
 
-const QuestionList = ({ questions, role }: Omit<InterviewRun, "status">) => (
+const QuestionList = ({ questions, role }: QuestionListProps) => (
 	<>
 		<header className="mb-6">
 			<div className="flex items-center gap-1.5 text-muted-foreground text-sm">
@@ -98,18 +100,19 @@ const QuestionList = ({ questions, role }: Omit<InterviewRun, "status">) => (
 );
 
 function App() {
-	// The form lives inside the sidebar, so read its result straight from the
-	// mutation cache instead of threading a callback down through BaseLayout.
-	const runs = useMutationState<InterviewRun>({
+	// Data comes from the store, which outlives both the mutation and the
+	// sidebar. One selector per field: returning an object literal here would
+	// create a new identity every render, which zustand v5 warns or loops on
+	// unless wrapped in useShallow.
+	const role = useQuestionsStore((state) => state.role);
+	const questions = useQuestionsStore((state) => state.questions);
+
+	// Status stays with react-query, which owns the lifecycle of the request.
+	const statuses = useMutationState<RequestStatus>({
 		filters: { mutationKey: INTERVIEW_MUTATION_KEY },
-		select: (mutation) => ({
-			status: mutation.state.status,
-			questions: (mutation.state.data as string[] | undefined) ?? [],
-			role: String(mutation.state.variables ?? ""),
-		}),
+		select: (mutation) => mutation.state.status,
 	});
-	const latest = runs.at(-1);
-	const status = latest?.status ?? "idle";
+	const status = statuses.at(-1) ?? "idle";
 
 	return (
 		<BaseLayout>
@@ -118,13 +121,13 @@ function App() {
 				aria-live="polite"
 				className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-10"
 			>
-				{status === "pending" && <LoadingState />}
-				{status === "error" && <ErrorState />}
-				{status === "success" && latest && latest.questions.length > 0 && (
-					<QuestionList questions={latest.questions} role={latest.role} />
-				)}
-				{(status === "idle" ||
-					(status === "success" && latest?.questions.length === 0)) && (
+				{status === "pending" ? (
+					<LoadingState />
+				) : status === "error" ? (
+					<ErrorState />
+				) : questions.length > 0 ? (
+					<QuestionList questions={questions} role={role} />
+				) : (
 					<EmptyState />
 				)}
 			</div>
