@@ -15,7 +15,7 @@ client = OpenAI(
 def set_open_params(
     model="gpt-3.5-turbo",
     temperature=1,
-    max_tokens=256,
+    max_tokens=1500,
     top_p=1,
     frequency_penalty=0,
     presence_penalty=0,
@@ -34,6 +34,7 @@ def set_open_params(
 
 def get_completion(params, messages):
     """GET completion from openai api"""
+    print(params)
     response = client.chat.completions.create(
         model=params["model"],
         messages=messages,
@@ -42,6 +43,9 @@ def get_completion(params, messages):
         top_p=params["top_p"],
         frequency_penalty=params["frequency_penalty"],
         presence_penalty=params["presence_penalty"],
+        # Makes valid JSON a decoding guarantee rather than an instruction the
+        # model may ignore by wrapping the reply in a markdown fence.
+        response_format={"type": "json_object"},
     )
     return response
 
