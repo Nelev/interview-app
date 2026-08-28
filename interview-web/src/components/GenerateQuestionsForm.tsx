@@ -16,20 +16,30 @@ export const INTERVIEW_MUTATION_KEY = ["interview"] as const;
 const GenerateQuestionsForm = () => {
 	const setQuestions = useQuestionsStore((state) => state.setQuestions);
 
-	const mutation = useMutation({
+	const postInterviewMutation = useMutation({
 		mutationKey: INTERVIEW_MUTATION_KEY,
 		mutationFn: postInterview,
-		onSuccess: (questions, role) => setQuestions(role, questions),
+		onSuccess: (questions, parameters) =>
+			setQuestions(parameters.role, questions),
 	});
 
 	const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		const formData = new FormData(event.currentTarget);
-		const jobTitle = String(formData.get("jobTitle") ?? "").trim();
-		if (!jobTitle) {
+		const parameters = Object.fromEntries(formData.entries());
+		const role = String(formData.get("role") ?? "").trim();
+		if (!role) {
 			return;
 		}
-		mutation.mutate(jobTitle);
+		postInterviewMutation.mutate(
+			parameters as {
+				role: string;
+				temperature: string;
+				topP: string;
+				frequencyPenalty: string;
+				presencePenalty: string;
+			},
+		);
 	};
 
 	return (
@@ -37,7 +47,11 @@ const GenerateQuestionsForm = () => {
 			<FieldGroup>
 				<Field>
 					<FieldLabel>Job Title</FieldLabel>
-					<Input name="jobTitle" required disabled={mutation.isPending} />
+					<Input
+						name="role"
+						required
+						disabled={postInterviewMutation.isPending}
+					/>
 					<FieldDescription>
 						Enter your job title to generate common interview questions.
 					</FieldDescription>
@@ -47,40 +61,40 @@ const GenerateQuestionsForm = () => {
 					<Slider
 						name="temperature"
 						min={0}
-						max={1}
+						max={2}
 						step={0.1}
-						defaultValue={[0.5]}
+						defaultValue={[0.7]}
 					/>
 				</Field>
 				<Field>
 					<FieldLabel>Top p</FieldLabel>
-					<Slider name="topP" min={0} max={1} step={0.1} defaultValue={[0.9]} />
+					<Slider name="topP" min={0} max={1} step={0.1} defaultValue={[1]} />
 				</Field>
 				<Field>
 					<FieldLabel>Frequency Penalty</FieldLabel>
 					<Slider
 						name="frequencyPenalty"
-						min={0}
-						max={1}
+						min={-2.0}
+						max={2.0}
 						step={0.1}
-						defaultValue={[0.5]}
+						defaultValue={[0.2]}
 					/>
 				</Field>
 				<Field>
 					<FieldLabel>Presence Penalty</FieldLabel>
 					<Slider
 						name="presencePenalty"
-						min={0}
-						max={1}
+						min={-2.0}
+						max={2.0}
 						step={0.1}
-						defaultValue={[0.5]}
+						defaultValue={[0.2]}
 					/>
 				</Field>
 				<Field>
-					<Button type="submit" disabled={mutation.isPending}>
-						{mutation.isPending ? "Generating…" : "Ask"}
+					<Button type="submit" disabled={postInterviewMutation.isPending}>
+						{postInterviewMutation.isPending ? "Generating…" : "Ask"}
 					</Button>
-					{mutation.isError && (
+					{postInterviewMutation.isError && (
 						<FieldDescription>
 							Could not generate questions. Please try again.
 						</FieldDescription>
