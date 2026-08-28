@@ -1,0 +1,80 @@
+name: Frontend
+
+# Path filters keep this workflow off backend-only changes. The workflow file
+# itself is included so edits to the pipeline still validate themselves.
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "interview-web/**"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    paths:
+      - "interview-web/**"
+      - ".github/workflows/frontend.yml"
+  workflow_dispatch:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: interview-web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Read from .nvmrc so CI and local development cannot drift apart.
+          node-version-file: interview-web/.nvmrc
+          # Dependency caching is deliberately OFF. The Yarn 1 cache for this
+          # dependency set is ~300MB across ~18k small files, and the post-job
+          # save step routinely stalls tarring and uploading it - for longer
+          # than a cold install takes. Revisit only if install time becomes the
+          # bottleneck, and prefer caching node_modules keyed on yarn.lock.
+
+      # --frozen-lockfile fails if yarn.lock does not match package.json,
+      # so a hand-edited manifest cannot slip through.
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Biome: formatter check, linter and import ordering in one pass.
+      # Read-only - CI reports drift, it never rewrites the tree.
+      - name: Check formatting and lint
+        run: yarn check:ci
+
+      # tsc -b && vite build. Typechecking lives here, not in a separate step,
+      # because that is what the build script already does.
+      - name: Build
+        run: yarn build
+
+      # Runs nothing today and passes. Adding a "test" script to package.json
+      # activates it with no change to this workflow.
+      - name: Test
+        run: |
+          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+            yarn test
+          else
+            echo "::notice::No test script defined in package.json - skipping."
+          fi
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: interview-web-dist
+          path: interview-web/dist
+          retention-days: 7
+          if-no-files-found: error
