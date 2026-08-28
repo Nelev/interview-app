@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from prompts.system_prompt import system_prompt
+from prompts.questions_system_prompt import questions_system_prompt
 
 load_dotenv()
 
@@ -51,7 +51,7 @@ def get_answers(role: str) -> str:
     params = set_open_params(temperature=0.7)
 
     messages = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": questions_system_prompt},
         {"role": "user", "content": f"Job title: {role}"},
     ]
 
