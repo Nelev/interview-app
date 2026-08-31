@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from prompts.questions_system_prompt import questions_system_prompt
+from schema.schemas import Question, Questions
 
 load_dotenv()
 
@@ -13,7 +14,7 @@ client = OpenAI(
 )
 
 def set_open_params(
-    model="gpt-3.5-turbo",
+    model="openai/gpt-4o-mini",
     temperature=1,
     max_tokens=1500,
     top_p=1,
@@ -43,9 +44,14 @@ def get_completion(params, messages):
         top_p=params["top_p"],
         frequency_penalty=params["frequency_penalty"],
         presence_penalty=params["presence_penalty"],
-        # Makes valid JSON a decoding guarantee rather than an instruction the
-        # model may ignore by wrapping the reply in a markdown fence.
-        response_format={"type": "json_object"},
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "questions_response",
+                "strict": True,
+                "schema": Questions.model_json_schema(),
+            },
+        },
     )
     return response
 
@@ -65,4 +71,8 @@ def get_answers(role: str, temperature: float, top_p: float, frequency_penalty: 
     ]
 
     response = get_completion(params, messages)
+    questions = Questions.model_validate_json(
+        response.choices[0].message.content
+    )
+    print(questions)
     return response.choices[0].message.content.strip()

@@ -19,7 +19,7 @@ const EmptyState = () => (
 			<ClipboardList className="size-6 text-muted-foreground" />
 		</div>
 		<h2 className="font-semibold text-xl tracking-tight">No questions yet</h2>
-		<p className="max-w-sm text-muted-foreground text-sm leading-relaxed">
+		<p className="max-w-sm text-muted-foreground text-[0.9375rem] leading-relaxed">
 			Enter a job title in the sidebar and choose{" "}
 			<span className="font-medium text-foreground">Ask</span> to generate the
 			questions you are most likely to be asked.
@@ -57,7 +57,9 @@ const ErrorState = () => (
 	<output className="mt-8 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
 		<CircleAlert className="mt-0.5 size-5 shrink-0 text-destructive" />
 		<div className="space-y-1">
-			<p className="font-medium text-sm">Could not generate questions</p>
+			<p className="font-medium text-[0.9375rem]">
+				Could not generate questions
+			</p>
 			<p className="text-muted-foreground text-sm leading-relaxed">
 				The response could not be read. This usually means the answer was cut
 				short — try again from the sidebar.
@@ -69,7 +71,7 @@ const ErrorState = () => (
 const QuestionList = ({ questions, role }: QuestionListProps) => (
 	<>
 		<header className="mb-6">
-			<div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+			<div className="flex items-center gap-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">
 				<Sparkles className="size-4" />
 				<span>Generated for</span>
 				<span className="font-medium text-foreground">{role}</span>
@@ -92,7 +94,7 @@ const QuestionList = ({ questions, role }: QuestionListProps) => (
 					<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs tabular-nums transition-colors group-hover:bg-background">
 						{index + 1}
 					</span>
-					<p className="pt-1 text-sm leading-relaxed">{question}</p>
+					<p className="pt-0.5 text-[0.9375rem] leading-relaxed">{question}</p>
 				</li>
 			))}
 		</ol>

@@ -21,13 +21,21 @@ const parseQuestions = (raw: string): string[] => {
 	return values.filter((value): value is string => typeof value === "string");
 };
 
-const postInterview = async (parameters: {
+/** Mirrors InterviewRequest on the API: camelCase here, snake_case there, with
+ *  the server's alias generator translating at the boundary. The numeric fields
+ *  are numbers because the DTO declares them float - sending strings worked only
+ *  because pydantic coerces them. */
+export type InterviewParameters = {
 	role: string;
-	temperature: string;
-	topP: string;
-	frequencyPenalty: string;
-	presencePenalty: string;
-}): Promise<string[]> => {
+	temperature: number;
+	topP: number;
+	frequencyPenalty: number;
+	presencePenalty: number;
+};
+
+const postInterview = async (
+	parameters: InterviewParameters,
+): Promise<string[]> => {
 	const response = await fetch(API_URL, {
 		method: "POST",
 		headers: {
