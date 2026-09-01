@@ -1,6 +1,11 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from guardrails.guardrails import basic_injection_check, validate_input
+from guardrails.guardrails import (
+    basic_injection_check,
+    validate_answer_batch,
+    validate_answer_input,
+    validate_role_input,
+)
 from schema.schemas import AnswerRequest, InterviewRequest
 from services.get_answers import get_answers
 from services.get_questions import get_questions
@@ -10,14 +15,7 @@ from slowapi.util import get_remote_address
 
 app = FastAPI()
 
-# Every request buys a completion, so the exposure here is cost rather than
-# availability: unmetered and unauthenticated, a loop drains the OpenRouter
-# balance. CORS does not help - an origin allowlist constrains browsers, and a
-# script ignores it entirely.
-#
-# Storage defaults to in-process memory, so counters are per worker. Running
-# with --workers or several containers multiplies the effective ceiling; that
-# needs storage_uri="redis://..." to share state.
+
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -39,7 +37,7 @@ app.add_middleware(
 @limiter.limit("10/minute")
 @limiter.limit("200/day")
 def post_interview(request: Request, payload: InterviewRequest):
-    is_valid, error_message = validate_input(payload.role)
+    is_valid, error_message = validate_role_input(payload.role)
     if not is_valid:
         raise HTTPException(status_code=422, detail=error_message)
     if basic_injection_check(payload.role):
@@ -57,5 +55,26 @@ def post_interview(request: Request, payload: InterviewRequest):
 @limiter.limit("10/minute")
 @limiter.limit("200/day")
 def post_answers(request: Request, payload: AnswerRequest):
+    # The role is one field, so it is checked once - not once per answer.
+    is_valid, error_message = validate_role_input(payload.role)
+    if not is_valid:
+        raise HTTPException(status_code=422, detail=error_message)
+    if basic_injection_check(payload.role):
+        raise HTTPException(status_code=422, detail="Invalid input detected.")
+
+    # Checked before the per-answer loop: an empty batch has nothing to loop
+    # over, so only a whole-request guard can reject it.
+    is_valid, error_message = validate_answer_batch(payload.answers)
+    if not is_valid:
+        raise HTTPException(status_code=422, detail=error_message)
+
+    for answer in payload.answers:
+        answer_text = answer.get("answer", "")
+        is_valid, error_message = validate_answer_input(answer_text)
+        if not is_valid:
+            raise HTTPException(status_code=422, detail=error_message)
+        if basic_injection_check(answer_text):
+            raise HTTPException(status_code=422, detail="Invalid input detected.")
+
     response = get_answers(payload.role, payload.answers)
     return {"response": response}
