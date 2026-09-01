@@ -1,0 +1,18 @@
+# Pin line endings to LF in the working tree, not just in the repository.
+#
+# The blobs are already stored as LF, but core.autocrlf=true converts them to
+# CRLF on checkout. Biome writes LF, so after every branch switch the formatter
+# and the checkout disagreed: `biome check` reported format errors, `check:fix`
+# rewrote the files, and git then listed them as modified with no content
+# change. eol=lf makes the checkout match what the formatter produces.
+* text=auto eol=lf
+
+# Collapse lockfiles in GitHub diffs. Deliberately not marked -diff, so local
+# `git diff` still shows them - a lockfile change is worth being able to read.
+yarn.lock linguist-generated=true
+uv.lock   linguist-generated=true
+
+# Binary assets: never convert, never diff.
+*.png   binary
+*.woff2 binary
+*.ico   binary
