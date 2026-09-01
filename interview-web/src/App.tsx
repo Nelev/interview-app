@@ -1,5 +1,5 @@
 import { useMutationState } from "@tanstack/react-query";
-import { CircleAlert, ClipboardList, Sparkles } from "lucide-react";
+import { CircleAlert, ClipboardList, SearchX, Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Question } from "@/model/model";
@@ -27,6 +27,37 @@ const EmptyState = () => (
 			Enter a job title in the sidebar and choose{" "}
 			<span className="font-medium text-foreground">Ask</span> to generate the
 			questions you are most likely to be asked.
+		</p>
+	</div>
+);
+
+/**
+ * The model returned no questions, which is how it reports input that is not a
+ * job role - the strict output schema has no field for an error message, so an
+ * empty list is the only rejection it can express.
+ *
+ * Distinguished from EmptyState by the mutation having succeeded: the same
+ * empty array otherwise looks identical to never having asked.
+ */
+const RejectedState = ({ role }: { role: string }) => (
+	<div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
+		<div className="flex size-12 items-center justify-center rounded-full bg-muted">
+			<SearchX className="size-6 text-muted-foreground" />
+		</div>
+		<h2 className="font-semibold text-xl tracking-tight">
+			That does not look like a job title
+		</h2>
+		<p className="max-w-sm text-muted-foreground text-[0.9375rem] leading-relaxed">
+			No questions could be generated
+			{role !== "" && (
+				<>
+					{" for "}
+					<span className="font-medium text-foreground">{role}</span>
+				</>
+			)}
+			. Try a recognised role such as{" "}
+			<span className="font-medium text-foreground">Software Engineer</span> or{" "}
+			<span className="font-medium text-foreground">Data Scientist</span>.
 		</p>
 	</div>
 );
@@ -144,6 +175,8 @@ function App() {
 						role={role}
 						answeredCount={answeredCount}
 					/>
+				) : status === "success" ? (
+					<RejectedState role={role} />
 				) : (
 					<EmptyState />
 				)}

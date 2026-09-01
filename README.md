@@ -13,10 +13,15 @@ The repository is a monorepo holding two independent services:
 ```
 interview-web  ──POST /interview {role, temperature, topP, …}──▶  interview-api  ──▶  OpenRouter
    :5173        ◀──{"response": {"questions": [{id, question}]}}──     :8000
+
+               ──POST /answers   {role, answers: [{id, question, answer}]}──▶
+               ◀──{"response": {"answers": [{id, rating, suggestedImprovements}]}}──
 ```
 
-The model is constrained by a JSON schema, so the reply is guaranteed to match
-the `Questions` shape rather than being free text the client has to parse.
+Both calls are constrained by a JSON schema with `strict: true`, so a reply is
+guaranteed to match the declared shape rather than being free text the client
+has to parse. That is also the strongest guardrail in the app: even a
+successful prompt injection cannot produce output the schema forbids.
 
 ## Prerequisites
 
@@ -94,9 +99,12 @@ Serves on `http://localhost:5173`. The API's CORS allowlist permits exactly
 
 ## API
 
+There are two routes. Both are rate limited and both reject invalid input with
+`422` before any paid call is made.
+
 ### `POST /interview`
 
-The only route. Request body — camelCase on the wire, snake_case in Python; a
+Generates the questions. Request body — camelCase on the wire, snake_case in Python; a
 pydantic alias generator translates at the boundary:
 
 ```json
@@ -135,28 +143,77 @@ curl -X POST http://127.0.0.1:8000/interview \
   -d '{"role": "Software Engineer"}'
 ```
 
+### `POST /answers`
+
+Evaluates the answers the user has drafted. One request covers the whole set, so
+ten answers cost one call against the rate limit rather than ten.
+
+```json
+{
+  "role": "Software Engineer",
+  "answers": [
+    { "id": 1, "question": "Explain the GIL.", "answer": "..." }
+  ]
+}
+```
+
+The question travels with each answer: an assessment of an answer is meaningless
+without the question it answers.
+
+Response — the answer text is deliberately not echoed back, since the client
+already holds it keyed by `id`:
+
+```json
+{ "response": { "answers": [ { "id": 1, "rating": 4, "suggestedImprovements": "..." } ] } }
+```
+
+`rating` is an integer 1–5 against an anchored rubric in the prompt; an
+unanchored scale clusters around 3.
+
 ### Guardrails
 
-Three layers, in [`guardrails/`](interview-api/guardrails/guardrails.py),
-[`schema/`](interview-api/schema/schemas.py) and the prompt:
+Four layers, in [`guardrails/`](interview-api/guardrails/guardrails.py),
+[`schema/`](interview-api/schema/schemas.py), the prompts, and the rate limiter.
 
-- **Schema bounds** reject out-of-range parameters before any paid call.
-- **`validate_input`** rejects empty input and anything over 60 characters;
-  **`basic_injection_check`** matches a short list of known injection phrases.
-  The pattern list is easily paraphrased around — treat it as defence in depth.
-- **Strict `json_schema` output** is the structural control: the model *cannot*
-  return anything but the `Questions` shape, so even a successful jailbreak
-  cannot produce free text.
-- **Rate limiting** via `slowapi` at **10/minute** and **200/day** per client
-  IP. Requests that fail validation return `422` without consuming quota, since
-  FastAPI validates the body before the handler the limiter wraps. That makes
-  this cost protection, not flood protection. Counters are in-process, so
-  running with `--workers` multiplies the effective ceiling.
+**Schema bounds** reject out-of-range parameters before any paid call, and
+`extra="forbid"` turns a misspelled key into a `422` rather than a silently
+ignored field.
 
-Model settings (`openai/gpt-4o-mini`, `max_tokens=1500`) are in
-`set_open_params` in
-[`services/get_answers.py`](interview-api/services/get_answers.py). The model
-matters: `strict: true` json_schema is not supported by `gpt-3.5-turbo`.
+**Input validation** is per-field, because the limits differ by kind:
+
+| Check | Applies to | Limit |
+| --- | --- | --- |
+| `validate_role_input` | `role` on both routes | non-empty, ≤ 60 chars |
+| `validate_answer_input` | each answer | non-empty, ≤ 2000 chars |
+| `validate_answer_batch` | the request as a whole | non-empty list, ≤ 12000 chars total |
+| `basic_injection_check` | `role` and each answer | known injection phrases |
+
+The batch limit is the one that caps cost: ten answers just under the per-answer
+limit would still send 20k characters in a single prompt. The messages are
+plain — `Input is too long.`, `No answers to evaluate.`, `Answer is too long.`,
+`Answers are too long in total.`
+
+`basic_injection_check` is a short substring list and is easily paraphrased
+around. Treat it as defence in depth, not a control.
+
+**Strict `json_schema` output** is the structural control, and the only one that
+does not depend on the model cooperating. The reply cannot contain anything the
+schema forbids, so a jailbreak cannot produce free text. It has one consequence
+worth knowing: there is no field for an error message, so the questions prompt
+reports input that is not a job role by returning `{"questions": []}`, and the
+frontend renders a distinct rejected state for it.
+
+**Rate limiting** via `slowapi` at **10/minute** and **200/day** per client IP on
+each route. Requests that fail validation return `422` without consuming quota,
+since FastAPI validates the body before the handler the limiter wraps — that
+makes this cost protection, not flood protection. Counters are in-process, so
+running with `--workers` multiplies the effective ceiling; sharing them needs
+`storage_uri="redis://..."`.
+
+Model settings (`openai/gpt-4o-mini`, `max_tokens=1500`) are in `set_open_params`
+in each service module. The model matters: `strict: true` json_schema is not
+supported by `gpt-3.5-turbo`, and reasoning models reject `temperature`, `top_p`
+and both penalties — asking for them yields a `404` with no eligible endpoint.
 
 ## Frontend scripts
 
@@ -185,24 +242,29 @@ linting it means re-fixing the same findings on every update.
 
 ```
 interview-api/
-  main.py                     FastAPI app, CORS, rate limits, the one route
+  main.py                     FastAPI app, CORS, rate limits, both routes
   const.py                    OpenRouter base URL
-  schema/schemas.py           InterviewRequest, Question, Questions
-  guardrails/guardrails.py    input validation and injection patterns
-  prompts/                    system prompt
-  services/get_answers.py     OpenRouter client, model params, completion call
+  schema/schemas.py           InterviewRequest, Question(s), AnswerRequest, Answer(s)
+  guardrails/guardrails.py    per-field validation and injection patterns
+  prompts/
+    questions_system_prompt.py  generates the questions
+    answers_system_prompt.py    assesses the answers
+  services/
+    get_questions.py            completion call for /interview
+    get_answers.py              completion call for /answers
 
 interview-web/
   src/main.tsx                entry point, TanStack Query provider
-  src/App.tsx                 empty / loading / error / results states
-  src/api/assistant.ts        typed fetch for POST /interview
-  src/model/model.ts          Question type, shared across api, store and UI
-  src/store/store.ts          zustand store: questions and committed answers
+  src/App.tsx                 empty / loading / error / rejected / results states
+  src/api/assistant.ts        typed fetch for both routes
+  src/model/model.ts          shared types across api, store and UI
+  src/store/store.ts          zustand: questions, answers, evaluations
   src/pages/BaseLayout.tsx    sidebar shell
-  src/components/AppSidebar.tsx           sidebar with the generation form
-  src/components/GenerateQuestionsForm.tsx  job title and model parameters
-  src/components/QuestionCard.tsx           one question, expandable to answer
-  src/components/ui/                        shadcn/ui primitives (vendored)
+  src/components/AppSidebar.tsx              sidebar containing the form
+  src/components/GenerateQuestionsForm.tsx   job title and model parameters
+  src/components/QuestionCard.tsx            one question, expandable to answer
+  src/components/EvaluateAnswersButton.tsx   sends the whole answered set
+  src/components/ui/                         shadcn/ui primitives (vendored)
 ```
 
 The `@` import alias maps to `interview-web/src/`, configured in both
@@ -214,9 +276,12 @@ The `@` import alias maps to `interview-web/src/`, configured in both
 Three stores, deliberately separated:
 
 - **TanStack Query** owns request lifecycle — `isPending`, `isError`.
-- **Zustand** owns settled data — the questions and the answers the user has
-  committed. It lives outside the React tree, so results survive the sidebar
-  unmounting, which happens below 768px when it collapses into a `Sheet`.
+- **Zustand** owns settled data — the questions, the answers the user has
+  committed, and the evaluations returned for them, each keyed by question id.
+  It lives outside the React tree, so results survive the sidebar unmounting,
+  which happens below 768px when it collapses into a `Sheet`. Editing an answer
+  clears its evaluation: a rating for text since changed is worse than no
+  rating, because it looks current.
 - **Local `useState`** owns in-progress drafts. Answer text stays in the card
   until submitted, so typing performs no store writes and one card's keystrokes
   cannot re-render the others.
@@ -244,20 +309,24 @@ open a PR into `main`, merge, delete the branch.
 
 ## Known gaps
 
-- **The prompt and the output schema disagree.** The prompt instructs the model
-  to reply `{"error": "Job title unknown"}` for input that is not a job role,
-  but `strict: true` makes that object unproducible — the schema requires
-  `questions`. So an unrecognised role currently yields invented questions
-  rather than a rejection.
-- **Answers go nowhere.** `QuestionCard` commits to the zustand store; there is
-  no endpoint to persist them, and they are lost on reload.
+- **`AnswerRequest.answers` is `list[dict]`**, so nothing validates the inbound
+  shape — a malformed payload becomes a malformed prompt rather than a `422`.
+  It is also why the handler and batch guard work through `.get("answer", "")`
+  instead of attribute access. Typing it with `Field(max_length=...)` would move
+  the length bounds into pydantic and remove most of `validate_answer_input`.
+- **Role classification is not enforced, only requested.** The questions prompt
+  asks the model to reject anything that is not a job role, but that judgement
+  is the model's and is fuzzy at the edges. A hard guarantee needs a server-side
+  check next to the other guardrails.
+- **Evaluations are not persisted.** They live in the zustand store and are lost
+  on reload, as are the answers themselves — there is no storage layer.
 - The API base URL is hardcoded in
   [`src/api/assistant.ts`](interview-web/src/api/assistant.ts) and the CORS
   origins in [`main.py`](interview-api/main.py). Neither reads configuration, so
   nothing runs outside a local machine yet.
 - No authentication. Rate limiting by IP is what you do when there is no
-  identity to key on.
+  identity to key on; it raises the cost of abuse without eliminating it.
 - No tests in either service, and no Python linter configured — the CI steps for
-  both are wired and waiting.
+  both are wired and activate as soon as either is added.
 - Leftover scaffold: `src/App.css` and `src/assets/` are unreferenced, and both
   per-service READMEs are still template text.
