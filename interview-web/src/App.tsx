@@ -8,8 +8,13 @@ import BaseLayout from "./pages/BaseLayout.tsx";
 
 type RequestStatus = "idle" | "pending" | "success" | "error";
 
+type Question = {
+	id: string;
+	question: string;
+};
+
 type QuestionListProps = {
-	questions: string[];
+	questions: Question[];
 	role: string;
 };
 
@@ -88,13 +93,15 @@ const QuestionList = ({ questions, role }: QuestionListProps) => (
 		<ol className="space-y-3">
 			{questions.map((question, index) => (
 				<li
-					key={question}
+					key={question.id}
 					className="group flex gap-4 rounded-lg border bg-card p-4 text-card-foreground transition-colors hover:border-foreground/20 hover:bg-accent/40"
 				>
 					<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs tabular-nums transition-colors group-hover:bg-background">
 						{index + 1}
 					</span>
-					<p className="pt-0.5 text-[0.9375rem] leading-relaxed">{question}</p>
+					<p className="pt-0.5 text-[0.9375rem] leading-relaxed">
+						{question.question}
+					</p>
 				</li>
 			))}
 		</ol>
@@ -108,6 +115,8 @@ function App() {
 	// unless wrapped in useShallow.
 	const role = useQuestionsStore((state) => state.role);
 	const questions = useQuestionsStore((state) => state.questions);
+
+	console.log("App render", { role, questions });
 
 	// Status stays with react-query, which owns the lifecycle of the request.
 	const statuses = useMutationState<RequestStatus>({

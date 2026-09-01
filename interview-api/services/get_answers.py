@@ -1,15 +1,17 @@
 import os
 
+from const import OPENAI_BASE_URL
 from dotenv import load_dotenv
 from openai import OpenAI
 from prompts.questions_system_prompt import questions_system_prompt
-from schema.schemas import Question, Questions
+from schema.schemas import Questions
 
 load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
 client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
+    base_url=OPENAI_BASE_URL,
     api_key=OPENROUTER_API_KEY,
 )
 
@@ -74,5 +76,4 @@ def get_answers(role: str, temperature: float, top_p: float, frequency_penalty: 
     questions = Questions.model_validate_json(
         response.choices[0].message.content
     )
-    print(questions)
-    return response.choices[0].message.content.strip()
+    return questions
