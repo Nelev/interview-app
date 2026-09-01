@@ -10,3 +10,15 @@ dependencies = [
     "python-dotenv>=1.2.3",
     "slowapi>=0.1.10",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+# The app is a flat module tree at the project root, not an installed package,
+# so the root has to be importable for "import main" to resolve.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

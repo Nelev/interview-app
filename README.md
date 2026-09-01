@@ -204,9 +204,18 @@ reports input that is not a job role by returning `{"questions": []}`, and the
 frontend renders a distinct rejected state for it.
 
 **Rate limiting** via `slowapi` at **10/minute** and **200/day** per client IP on
-each route. Requests that fail validation return `422` without consuming quota,
-since FastAPI validates the body before the handler the limiter wraps — that
-makes this cost protection, not flood protection. Counters are in-process, so
+each route. Which rejections consume quota depends on where they happen, and the
+distinction is easy to get wrong:
+
+- **Schema rejections never consume it.** FastAPI validates the body before the
+  handler the limiter wraps, so an unknown key or an out-of-range parameter
+  returns `422` without touching the limiter — fifteen in a row all return `422`.
+- **Guardrail rejections do consume it.** `validate_role_input` and friends run
+  *inside* the handler, so the limiter has already counted the request. Ten
+  whitespace-only roles return `422`, the eleventh returns `429`.
+
+Either way no paid call is made, so this is cost protection rather than flood
+protection. Counters are in-process, so
 running with `--workers` multiplies the effective ceiling; sharing them needs
 `storage_uri="redis://..."`.
 
@@ -214,6 +223,34 @@ Model settings (`openai/gpt-4o-mini`, `max_tokens=1500`) are in `set_open_params
 in each service module. The model matters: `strict: true` json_schema is not
 supported by `gpt-3.5-turbo`, and reasoning models reject `temperature`, `top_p`
 and both penalties — asking for them yields a `404` with no eligible endpoint.
+
+## API tests
+
+```bash
+cd interview-api && uv run pytest
+```
+
+63 tests, no network and no model calls: `get_questions` and `get_answers` are
+replaced with spies that record their arguments, so tests can assert both what
+reached the service and — for every rejection path — that nothing did.
+
+| File | Covers |
+| --- | --- |
+| `test_interview.py` | contract, role rules, parameter bounds, alias translation |
+| `test_answers.py` | contract, per-answer and batch limits, camelCase response |
+| `test_schemas.py` | strict-mode invariants on the output schemas |
+| `test_prompts.py` | prompts only ask for shapes the schemas permit |
+| `test_rate_limit.py` | the limiter, in isolation |
+
+Two of those exist to catch regressions that are invisible from reading the code.
+`test_schemas.py` asserts every property is required with no defaults — re-adding
+a default silently produces a `400` from the provider. `test_prompts.py` asserts
+the questions prompt does not request an object the schema forbids, which was a
+real bug: the instruction was dead text and the model invented questions instead.
+
+The limiter is disabled for the rest of the suite. `TestClient` presents one
+client IP, so the eleventh request of a session would `429` on whichever test
+happened to run then.
 
 ## Frontend scripts
 
@@ -252,6 +289,7 @@ interview-api/
   services/
     get_questions.py            completion call for /interview
     get_answers.py              completion call for /answers
+  tests/                      pytest suite, no network
 
 interview-web/
   src/main.tsx                entry point, TanStack Query provider
@@ -326,7 +364,7 @@ open a PR into `main`, merge, delete the branch.
   nothing runs outside a local machine yet.
 - No authentication. Rate limiting by IP is what you do when there is no
   identity to key on; it raises the cost of abuse without eliminating it.
-- No tests in either service, and no Python linter configured — the CI steps for
-  both are wired and activate as soon as either is added.
+- No frontend tests, and no Python linter configured — the CI steps for both are
+  wired and activate as soon as either is added.
 - Leftover scaffold: `src/App.css` and `src/assets/` are unreferenced, and both
   per-service READMEs are still template text.
