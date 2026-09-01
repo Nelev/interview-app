@@ -259,8 +259,5 @@ open a PR into `main`, merge, delete the branch.
   identity to key on.
 - No tests in either service, and no Python linter configured — the CI steps for
   both are wired and waiting.
-- No root `.gitattributes`. On Windows, `core.autocrlf` and Biome's LF output
-  disagree, so files show as modified with no content change after a branch
-  switch. `* text=auto eol=lf` would settle it.
 - Leftover scaffold: `src/App.css` and `src/assets/` are unreferenced, and both
   per-service READMEs are still template text.
