@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
-import type { Question } from "@/model/model";
+import type { AnswerResponse, Question } from "@/model/model";
 
 /**
  * Holds the settled result of a question generation.
@@ -24,22 +24,42 @@ const useQuestionsStore = create(
 			questions: [] as Question[],
 			/** Committed answers, keyed by Question.id. */
 			answers: {} as Record<number, string>,
+			/** Evaluations returned by the API, keyed by Question.id. */
+			evaluations: {} as Record<number, AnswerResponse>,
 		},
 		(set) => ({
 			// Answers are cleared alongside the questions: ids are only unique
 			// within one generation, so keeping them would attach the previous
 			// role's answers to entirely different questions.
 			setQuestions: (role: string, questions: Question[]) =>
-				set({ role, questions, answers: {} }),
+				set({ role, questions, answers: {}, evaluations: {} }),
+			// Editing an answer invalidates its evaluation: a rating for text the
+			// user has since changed is worse than no rating, because it looks
+			// current.
 			setAnswer: (id: number, answer: string) =>
-				set((state) => ({ answers: { ...state.answers, [id]: answer } })),
-			clear: () => set({ role: "", questions: [], answers: {} }),
+				set((state) => {
+					const { [id]: _stale, ...evaluations } = state.evaluations;
+					return { answers: { ...state.answers, [id]: answer }, evaluations };
+				}),
+			setEvaluations: (results: AnswerResponse[]) =>
+				set({
+					evaluations: Object.fromEntries(
+						results.map((result) => [result.id, result]),
+					),
+				}),
+			clear: () =>
+				set({ role: "", questions: [], answers: {}, evaluations: {} }),
 		}),
 	),
 );
 
 /** Reset helper for tests - a module singleton persists between them. */
 const resetQuestionsStore = () =>
-	useQuestionsStore.setState({ role: "", questions: [], answers: {} });
+	useQuestionsStore.setState({
+		role: "",
+		questions: [],
+		answers: {},
+		evaluations: {},
+	});
 
 export { resetQuestionsStore, useQuestionsStore };

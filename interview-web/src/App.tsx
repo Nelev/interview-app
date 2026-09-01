@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Question } from "@/model/model";
 import { useQuestionsStore } from "@/store/store.ts";
+import EvaluateAnswersButton from "./components/EvaluateAnswersButton.tsx";
 import { INTERVIEW_MUTATION_KEY } from "./components/GenerateQuestionsForm.tsx";
 import QuestionCard from "./components/QuestionCard.tsx";
 import BaseLayout from "./pages/BaseLayout.tsx";
@@ -104,6 +105,7 @@ const QuestionList = ({
 				<QuestionCard key={question.id} question={question} index={index} />
 			))}
 		</ol>
+		<EvaluateAnswersButton />
 	</>
 );
 

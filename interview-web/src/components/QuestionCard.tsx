@@ -25,6 +25,10 @@ const QuestionCard = ({ question, index }: QuestionCardProps) => {
 	// does not re-render this one.
 	const setAnswer = useQuestionsStore((state) => state.setAnswer);
 	const savedAnswer = useQuestionsStore((state) => state.answers[question.id]);
+	// Selected per id, so a card only re-renders when its own evaluation lands.
+	const evaluation = useQuestionsStore(
+		(state) => state.evaluations[question.id],
+	);
 
 	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -69,6 +73,12 @@ const QuestionCard = ({ question, index }: QuestionCardProps) => {
 								</>
 							)}
 						</CollapsibleTrigger>
+						{evaluation !== undefined && (
+							<span className="ml-2 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs tabular-nums">
+								{evaluation.rating}/5
+								<span className="sr-only"> rating</span>
+							</span>
+						)}
 						<CollapsibleContent>
 							<form onSubmit={handleSubmit} className="space-y-2 pb-1">
 								<label className="sr-only" htmlFor={textareaId}>
@@ -92,6 +102,17 @@ const QuestionCard = ({ question, index }: QuestionCardProps) => {
 									)}
 								</div>
 							</form>
+							{evaluation !== undefined &&
+								evaluation.suggestedImprovements !== "" && (
+									<div className="mt-3 rounded-md border bg-muted/40 p-3">
+										<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+											Suggested improvements
+										</p>
+										<p className="mt-1.5 text-sm leading-relaxed">
+											{evaluation.suggestedImprovements}
+										</p>
+									</div>
+								)}
 						</CollapsibleContent>
 					</div>
 				</div>
