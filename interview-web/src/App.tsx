@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Question } from "@/model/model";
 import { useQuestionsStore } from "@/store/store.ts";
 import { INTERVIEW_MUTATION_KEY } from "./components/GenerateQuestionsForm.tsx";
+import QuestionCard from "./components/QuestionCard.tsx";
 import BaseLayout from "./pages/BaseLayout.tsx";
 
 type RequestStatus = "idle" | "pending" | "success" | "error";
@@ -12,6 +13,7 @@ type RequestStatus = "idle" | "pending" | "success" | "error";
 type QuestionListProps = {
 	questions: Question[];
 	role: string;
+	answeredCount: number;
 };
 
 const EmptyState = () => (
@@ -69,7 +71,11 @@ const ErrorState = () => (
 	</output>
 );
 
-const QuestionList = ({ questions, role }: QuestionListProps) => (
+const QuestionList = ({
+	questions,
+	role,
+	answeredCount,
+}: QuestionListProps) => (
 	<>
 		<header className="mb-6">
 			<div className="flex items-center gap-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">
@@ -82,23 +88,20 @@ const QuestionList = ({ questions, role }: QuestionListProps) => (
 			</h2>
 			<p className="mt-1 text-muted-foreground text-sm">
 				{questions.length} question{questions.length === 1 ? "" : "s"} you are
-				most likely to be asked.
+				most likely to be asked
+				{answeredCount > 0 && (
+					<span className="text-foreground">
+						{" "}
+						&middot; {answeredCount} of {questions.length} answered
+					</span>
+				)}
+				.
 			</p>
 		</header>
 		<Separator className="mb-6" />
 		<ol className="space-y-3">
 			{questions.map((question, index) => (
-				<li
-					key={question.id}
-					className="group flex gap-4 rounded-lg border bg-card p-4 text-card-foreground transition-colors hover:border-foreground/20 hover:bg-accent/40"
-				>
-					<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs tabular-nums transition-colors group-hover:bg-background">
-						{index + 1}
-					</span>
-					<p className="pt-0.5 text-[0.9375rem] leading-relaxed">
-						{question.question}
-					</p>
-				</li>
+				<QuestionCard key={question.id} question={question} index={index} />
 			))}
 		</ol>
 	</>
@@ -111,6 +114,9 @@ function App() {
 	// unless wrapped in useShallow.
 	const role = useQuestionsStore((state) => state.role);
 	const questions = useQuestionsStore((state) => state.questions);
+	const answeredCount = useQuestionsStore(
+		(state) => Object.keys(state.answers).length,
+	);
 
 	// Status stays with react-query, which owns the lifecycle of the request.
 	const statuses = useMutationState<RequestStatus>({
@@ -131,7 +137,11 @@ function App() {
 				) : status === "error" ? (
 					<ErrorState />
 				) : questions.length > 0 ? (
-					<QuestionList questions={questions} role={role} />
+					<QuestionList
+						questions={questions}
+						role={role}
+						answeredCount={answeredCount}
+					/>
 				) : (
 					<EmptyState />
 				)}
