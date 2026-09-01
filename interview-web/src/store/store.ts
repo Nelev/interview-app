@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
+import type { Question } from "@/model/model";
 
 /**
  * Holds the settled result of a question generation.
@@ -16,10 +17,10 @@ const useQuestionsStore = create(
 	combine(
 		{
 			role: "",
-			questions: [] as string[],
+			questions: [] as Question[],
 		},
 		(set) => ({
-			setQuestions: (role: string, questions: string[]) =>
+			setQuestions: (role: string, questions: Question[]) =>
 				set({ role, questions }),
 			clear: () => set({ role: "", questions: [] }),
 		}),

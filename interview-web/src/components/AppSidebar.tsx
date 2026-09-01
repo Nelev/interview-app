@@ -20,7 +20,7 @@ const AppSidebar = () => {
 	return (
 		<Sidebar>
 			<SidebarHeader>
-				<h2 className="text-lg font-bold">Services</h2>
+				<h2 className="font-semibold text-sm tracking-tight">Services</h2>
 			</SidebarHeader>
 			<SidebarContent>
 				<Collapsible defaultOpen className="group/collapsible">

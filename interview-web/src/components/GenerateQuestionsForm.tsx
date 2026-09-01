@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
@@ -7,16 +8,23 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useQuestionsStore } from "@/store/store.ts";
 import { postInterview } from "../api/assistant.ts";
 import { Slider } from "./ui/slider";
+
 // Shared with App, which reads this mutation's result via useMutationState.
 export const INTERVIEW_MUTATION_KEY = ["interview"] as const;
 
 const GenerateQuestionsForm = () => {
+	const [temperature, setTemperature] = React.useState<number>(0.7);
+	const [topP, setTopP] = React.useState<number>(1);
+	const [frequencyPenalty, setFrequencyPenalty] = React.useState<number>(0.2);
+	const [presencePenalty, setPresencePenalty] = React.useState<number>(0.2);
+
 	const setQuestions = useQuestionsStore((state) => state.setQuestions);
 
-	const postInterviewMutation = useMutation({
+	const mutation = useMutation({
 		mutationKey: INTERVIEW_MUTATION_KEY,
 		mutationFn: postInterview,
 		onSuccess: (questions, parameters) =>
@@ -25,21 +33,23 @@ const GenerateQuestionsForm = () => {
 
 	const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		const formData = new FormData(event.currentTarget);
-		const parameters = Object.fromEntries(formData.entries());
-		const role = String(formData.get("role") ?? "").trim();
+		// The job title is an uncontrolled text input, so it comes from the form.
+		// The four parameters come from state - the same values driving the
+		// readouts - rather than from FormData, which returns strings and needed a
+		// cast that verified nothing.
+		const role = String(
+			new FormData(event.currentTarget).get("role") ?? "",
+		).trim();
 		if (!role) {
 			return;
 		}
-		postInterviewMutation.mutate(
-			parameters as {
-				role: string;
-				temperature: string;
-				topP: string;
-				frequencyPenalty: string;
-				presencePenalty: string;
-			},
-		);
+		mutation.mutate({
+			role,
+			temperature,
+			topP,
+			frequencyPenalty,
+			presencePenalty,
+		});
 	};
 
 	return (
@@ -47,54 +57,115 @@ const GenerateQuestionsForm = () => {
 			<FieldGroup>
 				<Field>
 					<FieldLabel>Job Title</FieldLabel>
-					<Input
-						name="role"
-						required
-						disabled={postInterviewMutation.isPending}
-					/>
-					<FieldDescription>
+					<Input name="role" required disabled={mutation.isPending} />
+					<FieldDescription className="text-xs">
 						Enter your job title to generate common interview questions.
 					</FieldDescription>
 				</Field>
 				<Field>
-					<FieldLabel>Temperature</FieldLabel>
+					<div className="flex items-center justify-between gap-2">
+						<Label
+							htmlFor="temperature"
+							className="font-medium text-muted-foreground text-xs tracking-wide"
+						>
+							Temperature
+						</Label>
+						<span className="text-muted-foreground text-xs tabular-nums">
+							{temperature}
+						</span>
+					</div>
 					<Slider
+						id="temperature"
 						name="temperature"
+						value={[temperature]}
+						onValueChange={(next) =>
+							setTemperature(Array.isArray(next) ? next[0] : next)
+						}
 						min={0}
 						max={2}
 						step={0.1}
-						defaultValue={[0.7]}
 					/>
 				</Field>
+
 				<Field>
-					<FieldLabel>Top p</FieldLabel>
-					<Slider name="topP" min={0} max={1} step={0.1} defaultValue={[1]} />
-				</Field>
-				<Field>
-					<FieldLabel>Frequency Penalty</FieldLabel>
+					<div className="flex items-center justify-between gap-2">
+						<Label
+							htmlFor="topP"
+							className="font-medium text-muted-foreground text-xs tracking-wide"
+						>
+							Top P
+						</Label>
+						<span className="text-muted-foreground text-xs tabular-nums">
+							{topP}
+						</span>
+					</div>
 					<Slider
+						id="topP"
+						name="topP"
+						value={[topP]}
+						onValueChange={(next) =>
+							setTopP(Array.isArray(next) ? next[0] : next)
+						}
+						min={0}
+						max={1}
+						step={0.1}
+					/>
+				</Field>
+
+				<Field>
+					<div className="flex items-center justify-between gap-2">
+						<Label
+							htmlFor="frequencyPenalty"
+							className="font-medium text-muted-foreground text-xs tracking-wide"
+						>
+							Frequency Penalty
+						</Label>
+						<span className="text-muted-foreground text-xs tabular-nums">
+							{frequencyPenalty}
+						</span>
+					</div>
+					<Slider
+						id="frequencyPenalty"
 						name="frequencyPenalty"
-						min={-2.0}
-						max={2.0}
+						value={[frequencyPenalty]}
+						onValueChange={(next) =>
+							setFrequencyPenalty(Array.isArray(next) ? next[0] : next)
+						}
+						min={-2}
+						max={2}
 						step={0.1}
-						defaultValue={[0.2]}
 					/>
 				</Field>
+
 				<Field>
-					<FieldLabel>Presence Penalty</FieldLabel>
+					<div className="flex items-center justify-between gap-2">
+						<Label
+							htmlFor="presencePenalty"
+							className="font-medium text-muted-foreground text-xs tracking-wide"
+						>
+							Presence penalty
+						</Label>
+						<span className="text-muted-foreground text-xs tabular-nums">
+							{presencePenalty}
+						</span>
+					</div>
 					<Slider
+						id="presencePenalty"
 						name="presencePenalty"
-						min={-2.0}
-						max={2.0}
+						value={[presencePenalty]}
+						onValueChange={(next) =>
+							setPresencePenalty(Array.isArray(next) ? next[0] : next)
+						}
+						min={-2}
+						max={2}
 						step={0.1}
-						defaultValue={[0.2]}
 					/>
 				</Field>
 				<Field>
-					<Button type="submit" disabled={postInterviewMutation.isPending}>
-						{postInterviewMutation.isPending ? "Generating…" : "Ask"}
+					<Button type="submit" disabled={mutation.isPending}>
+						{mutation.isPending ? "Generating…" : "Ask"}
 					</Button>
-					{postInterviewMutation.isError && (
+					{mutation.isError && (
 						<FieldDescription>
 							Could not generate questions. Please try again.
 						</FieldDescription>
