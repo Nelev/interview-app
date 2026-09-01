@@ -93,7 +93,7 @@ const QuestionCard = ({ question, index }: QuestionCardProps) => {
 								/>
 								<div className="flex items-center gap-3">
 									<Button type="submit" size="sm" disabled={!draft.trim()}>
-										Send answer
+										Save answer
 									</Button>
 									{isSaved && (
 										<output className="text-muted-foreground text-xs">

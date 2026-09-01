@@ -36,19 +36,15 @@ class AnswerRequest(BaseModel):
     answers: list[dict]
 
 class Answer(BaseModel):
-    # Strict structured outputs require every property to be listed in
-    # "required" and reject the "default" keyword outright. In pydantic, giving
-    # a field a default is what makes it optional in the generated schema, so
-    # the defaults are omitted here rather than the constraints.
-    #
-    # The candidate's answer text is deliberately not echoed back: the client
-    # already holds it keyed by id, and returning it would spend output tokens
-    # on data the caller sent.
+    # Strict structured outputs require every property to appear in "required"
+    # and reject the "default" keyword. In pydantic a default is what makes a
+    # field optional, so the defaults are omitted here rather than the bounds -
+    # re-adding one reintroduces a 400 from the provider.
     model_config = ConfigDict(
-            alias_generator=to_camel,
-            populate_by_name=True,
-            extra="forbid",
-        )
+        alias_generator=to_camel,
+        populate_by_name=True,
+        extra="forbid",
+    )
     id: int
     rating: int = Field(ge=1, le=5)
     suggested_improvements: str
