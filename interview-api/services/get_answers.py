@@ -3,8 +3,8 @@ import os
 from const import OPENAI_BASE_URL
 from dotenv import load_dotenv
 from openai import OpenAI
-from prompts.questions_system_prompt import questions_system_prompt
-from schema.schemas import Questions
+from prompts.answers_system_prompt import answers_system_prompt
+from schema.schemas import Answers
 
 load_dotenv()
 
@@ -17,7 +17,7 @@ client = OpenAI(
 
 def set_open_params(
     model="openai/gpt-4o-mini",
-    temperature=1,
+    temperature=0.7,
     max_tokens=1500,
     top_p=1,
     frequency_penalty=0,
@@ -48,37 +48,25 @@ def get_completion(params, messages):
         response_format={
             "type": "json_schema",
             "json_schema": {
-                "name": "questions_response",
+                "name": "answers_response",
                 "strict": True,
-                "schema": Questions.model_json_schema(),
+                "schema": Answers.model_json_schema(),
             },
         },
     )
     return response
 
 
-def get_answers(
-    role: str,
-    temperature: float,
-    top_p: float,
-    frequency_penalty: float,
-    presence_penalty: float,
-) -> Questions:
+def get_answers(role: str, answers: list) -> Answers:
 
-    params = set_open_params(
-        temperature=temperature,
-        top_p=top_p,
-        frequency_penalty=frequency_penalty,
-        presence_penalty=presence_penalty
-    )
-
+    params = set_open_params()
     messages = [
-        {"role": "system", "content": questions_system_prompt},
-        {"role": "user", "content": f"Job title: {role}"},
+        {"role": "system", "content": answers_system_prompt},
+        {"role": "user", "content": f"Job title: {role}, Answers: {answers}"},
     ]
 
     response = get_completion(params, messages)
-    questions = Questions.model_validate_json(
+    output_answers = Answers.model_validate_json(
         response.choices[0].message.content
     )
-    return questions
+    return output_answers

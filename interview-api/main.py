@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from guardrails.guardrails import basic_injection_check, validate_input
-from schema.schemas import InterviewRequest
+from schema.schemas import AnswerRequest, InterviewRequest
 from services.get_answers import get_answers
+from services.get_questions import get_questions
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -35,27 +36,26 @@ app.add_middleware(
 )
 
 @app.post("/interview")
-# Per-minute stops bursts; per-day caps total spend. Neither covers requests
-# that fail validation: FastAPI validates the body before the handler this
-# decorator wraps, so a 422 never consumes quota. That is deliberate - a 422
-# costs nothing upstream - but it means this is cost protection, not flood
-# protection.
 @limiter.limit("10/minute")
 @limiter.limit("200/day")
-# "request" is named and typed for slowapi, which finds the client by
-# introspecting the signature for exactly that name. The body moves to
-# "payload" to free it up.
 def post_interview(request: Request, payload: InterviewRequest):
     is_valid, error_message = validate_input(payload.role)
     if not is_valid:
         raise HTTPException(status_code=422, detail=error_message)
     if basic_injection_check(payload.role):
         raise HTTPException(status_code=422, detail="Invalid input detected.")
-    response = get_answers(
+    response = get_questions(
         payload.role,
         payload.temperature,
         payload.top_p,
         payload.frequency_penalty,
         payload.presence_penalty,
     )
+    return {"response": response}
+
+@app.post("/answers")
+@limiter.limit("10/minute")
+@limiter.limit("200/day")
+def post_answers(request: Request, payload: AnswerRequest):
+    response = get_answers(payload.role, payload.answers)
     return {"response": response}
