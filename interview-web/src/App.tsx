@@ -2,16 +2,12 @@ import { useMutationState } from "@tanstack/react-query";
 import { CircleAlert, ClipboardList, Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Question } from "@/model/model";
 import { useQuestionsStore } from "@/store/store.ts";
 import { INTERVIEW_MUTATION_KEY } from "./components/GenerateQuestionsForm.tsx";
 import BaseLayout from "./pages/BaseLayout.tsx";
 
 type RequestStatus = "idle" | "pending" | "success" | "error";
-
-type Question = {
-	id: string;
-	question: string;
-};
 
 type QuestionListProps = {
 	questions: Question[];
@@ -115,8 +111,6 @@ function App() {
 	// unless wrapped in useShallow.
 	const role = useQuestionsStore((state) => state.role);
 	const questions = useQuestionsStore((state) => state.questions);
-
-	console.log("App render", { role, questions });
 
 	// Status stays with react-query, which owns the lifecycle of the request.
 	const statuses = useMutationState<RequestStatus>({

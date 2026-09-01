@@ -37,7 +37,6 @@ def set_open_params(
 
 def get_completion(params, messages):
     """GET completion from openai api"""
-    print(params)
     response = client.chat.completions.create(
         model=params["model"],
         messages=messages,
@@ -58,7 +57,13 @@ def get_completion(params, messages):
     return response
 
 
-def get_answers(role: str, temperature: float, top_p: float, frequency_penalty: float, presence_penalty: float) -> str:
+def get_answers(
+    role: str,
+    temperature: float,
+    top_p: float,
+    frequency_penalty: float,
+    presence_penalty: float,
+) -> Questions:
 
     params = set_open_params(
         temperature=temperature,
