@@ -11,6 +11,8 @@ export type InterviewParameters = {
 	topP: number;
 	frequencyPenalty: number;
 	presencePenalty: number;
+	difficulty: string;
+	model: string;
 };
 
 /** One evaluation returned by /answers. The answer text is not echoed back:

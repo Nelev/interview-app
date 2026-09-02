@@ -44,6 +44,8 @@ def post_interview(request: Request, payload: InterviewRequest):
         raise HTTPException(status_code=422, detail="Invalid input detected.")
     response = get_questions(
         payload.role,
+        payload.model,
+        payload.difficulty,
         payload.temperature,
         payload.top_p,
         payload.frequency_penalty,

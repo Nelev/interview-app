@@ -59,6 +59,8 @@ def get_completion(params, messages):
 
 def get_questions(
     role: str,
+    model: str,
+    difficulty: str,
     temperature: float,
     top_p: float,
     frequency_penalty: float,
@@ -66,6 +68,7 @@ def get_questions(
 ) -> Questions:
 
     params = set_open_params(
+        model=model,
         temperature=temperature,
         top_p=top_p,
         frequency_penalty=frequency_penalty,
@@ -74,7 +77,7 @@ def get_questions(
 
     messages = [
         {"role": "system", "content": questions_system_prompt},
-        {"role": "user", "content": f"Job title: {role}"},
+        {"role": "user", "content": f"Job title: {role}, difficulty: {difficulty}"},
     ]
 
     response = get_completion(params, messages)

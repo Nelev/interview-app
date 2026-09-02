@@ -1,5 +1,9 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
+Difficulty = Literal["easy", "medium", "hard"]
 
 
 class InterviewRequest(BaseModel):
@@ -10,6 +14,10 @@ class InterviewRequest(BaseModel):
     )
 
     role: str
+    # Defaulted so the parameters stay optional for a caller that only has a
+    # role, matching every other field below.
+    model: str = "openai/gpt-4o-mini"
+    difficulty: Difficulty = "medium"
     frequency_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
     presence_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
     temperature: float = Field(default=1.0, ge=0.0, le=2.0)
