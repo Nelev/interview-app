@@ -24,15 +24,7 @@ import { Slider } from "./ui/slider";
 // Shared with App, which reads this mutation's result via useMutationState.
 export const INTERVIEW_MUTATION_KEY = ["interview"] as const;
 
-// Mirrors InterviewModel in schema/schemas.py, which rejects anything outside
-// the set: adding an option here alone gets a 422, not a call. See that file
-// for the two checks a slug has to clear - supported parameters, and having a
-// route that survives the account's OpenRouter data policy.
-const MODELS = [
-	{ label: "GPT-4o mini", value: "openai/gpt-4o-mini" },
-	{ label: "GPT-4o", value: "openai/gpt-4o" },
-	{ label: "Mistral Small", value: "mistralai/mistral-small-2603" },
-] as const;
+const MODELS = [{ label: "GPT-4o mini", value: "openai/gpt-4o-mini" }] as const;
 
 const DIFFICULTY_LEVELS = [
 	{ label: "Easy", value: "easy" },

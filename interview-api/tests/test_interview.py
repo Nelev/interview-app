@@ -145,9 +145,9 @@ class TestAliases:
 
 
 class TestModelSelection:
-    # The schema types model as a plain str, so these are the slugs the form
-    # offers rather than a set the API enforces. Kept in sync by hand with
-    # MODELS in GenerateQuestionsForm.tsx.
+    # The schema types model as a plain str, so the API enforces no set at all.
+    # These are representative slugs verified against OpenRouter; the form
+    # offers its own list, which may be narrower and is not asserted here.
     OFFERED = [
         "openai/gpt-4o-mini",
         "openai/gpt-4o",
