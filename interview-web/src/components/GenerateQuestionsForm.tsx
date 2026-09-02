@@ -9,6 +9,14 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useQuestionsStore } from "@/store/store.ts";
 import { postInterview } from "../api/assistant.ts";
 import { Slider } from "./ui/slider";
@@ -16,11 +24,31 @@ import { Slider } from "./ui/slider";
 // Shared with App, which reads this mutation's result via useMutationState.
 export const INTERVIEW_MUTATION_KEY = ["interview"] as const;
 
+// Mirrors InterviewModel in schema/schemas.py, which rejects anything outside
+// the set: adding an option here alone gets a 422, not a call. See that file
+// for the two checks a slug has to clear - supported parameters, and having a
+// route that survives the account's OpenRouter data policy.
+const MODELS = [
+	{ label: "GPT-4o mini", value: "openai/gpt-4o-mini" },
+	{ label: "GPT-4o", value: "openai/gpt-4o" },
+	{ label: "Mistral Small", value: "mistralai/mistral-small-2603" },
+] as const;
+
+const DIFFICULTY_LEVELS = [
+	{ label: "Easy", value: "easy" },
+	{ label: "Medium", value: "medium" },
+	{ label: "Hard", value: "hard" },
+] as const;
+
 const GenerateQuestionsForm = () => {
 	const [temperature, setTemperature] = React.useState<number>(0.7);
 	const [topP, setTopP] = React.useState<number>(1);
 	const [frequencyPenalty, setFrequencyPenalty] = React.useState<number>(0.2);
 	const [presencePenalty, setPresencePenalty] = React.useState<number>(0.2);
+	const [difficulty, setDifficulty] = React.useState<string | null>(
+		DIFFICULTY_LEVELS[0].value,
+	);
+	const [model, setModel] = React.useState<string | null>(MODELS[0].value);
 
 	const setQuestions = useQuestionsStore((state) => state.setQuestions);
 
@@ -33,10 +61,6 @@ const GenerateQuestionsForm = () => {
 
 	const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		// The job title is an uncontrolled text input, so it comes from the form.
-		// The four parameters come from state - the same values driving the
-		// readouts - rather than from FormData, which returns strings and needed a
-		// cast that verified nothing.
 		const role = String(
 			new FormData(event.currentTarget).get("role") ?? "",
 		).trim();
@@ -49,6 +73,8 @@ const GenerateQuestionsForm = () => {
 			topP,
 			frequencyPenalty,
 			presencePenalty,
+			difficulty: difficulty ?? DIFFICULTY_LEVELS[0].value,
+			model: model ?? MODELS[0].value,
 		});
 	};
 
@@ -61,6 +87,52 @@ const GenerateQuestionsForm = () => {
 					<FieldDescription className="text-xs">
 						Enter your job title to generate common interview questions.
 					</FieldDescription>
+				</Field>
+				<Field>
+					<FieldLabel>Select a model</FieldLabel>
+					<Select
+						items={MODELS}
+						name="model"
+						value={model}
+						onValueChange={(value) => setModel(value)}
+						disabled={mutation.isPending}
+					>
+						<SelectTrigger className="w-[180px]">
+							<SelectValue placeholder="Select a model" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								{MODELS.map((model) => (
+									<SelectItem key={model.value} value={model.value}>
+										{model.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+				</Field>
+				<Field>
+					<FieldLabel>Select a difficulty level</FieldLabel>
+					<Select
+						items={DIFFICULTY_LEVELS}
+						name="difficulty"
+						defaultValue={DIFFICULTY_LEVELS[0].value}
+						disabled={mutation.isPending}
+						onValueChange={(value) => setDifficulty(value)}
+					>
+						<SelectTrigger className="w-[180px]">
+							<SelectValue placeholder="Select a difficulty level" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								{DIFFICULTY_LEVELS.map((level) => (
+									<SelectItem key={level.value} value={level.value}>
+										{level.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
 				</Field>
 				<Field>
 					<div className="flex items-center justify-between gap-2">
