@@ -13,7 +13,7 @@ const ANSWERS_URL = `${API_BASE_URL}/answers`;
 
 const postInterview = async (
 	parameters: InterviewParameters,
-): Promise<{ questions: Question[]; cost: number }> => {
+): Promise<{ questions: Question[]; cost: number | null }> => {
 	const response = await fetch(API_URL, {
 		method: "POST",
 		headers: {
@@ -33,7 +33,7 @@ const postInterview = async (
 const postAnswers = async (payload: {
 	role: string;
 	answers: SubmittedAnswer[];
-}): Promise<{ evaluations: AnswerResponse[]; cost: number }> => {
+}): Promise<{ evaluations: AnswerResponse[]; cost: number | null }> => {
 	const response = await fetch(ANSWERS_URL, {
 		method: "POST",
 		headers: {

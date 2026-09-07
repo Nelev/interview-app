@@ -49,9 +49,13 @@ const useQuestionsStore = create(
 					),
 				}),
 			// Accumulates rather than replaces: the sidebar reports the cost of
-			// the whole session, not of the last call.
-			setCost: (callCost: number) =>
-				set((state) => ({ cost: state.cost + callCost })),
+			// the whole session, not of the last call. An unreported cost is
+			// skipped outright - the call still happened, so the total is a
+			// lower bound rather than a wrong number.
+			setCost: (callCost: number | null) =>
+				set((state) =>
+					callCost === null ? state : { cost: state.cost + callCost },
+				),
 			clear: () =>
 				set({ role: "", questions: [], answers: {}, evaluations: {}, cost: 0 }),
 		}),

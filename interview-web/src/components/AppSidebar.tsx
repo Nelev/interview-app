@@ -14,8 +14,8 @@ import {
 	SidebarHeader,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useQuestionsStore } from "@/store/store";
 import GenerateQuestionsForm from "./GenerateQuestionsForm";
+import SessionCost from "./SessionCost";
 
 const AppSidebar = () => {
 	return (
@@ -41,7 +41,7 @@ const AppSidebar = () => {
 				</Collapsible>
 			</SidebarContent>
 			<SidebarFooter>
-				session cost is: {useQuestionsStore((state) => state.cost)}
+				<SessionCost />
 			</SidebarFooter>
 		</Sidebar>
 	);
