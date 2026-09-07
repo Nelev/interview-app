@@ -43,12 +43,15 @@ const GenerateQuestionsForm = () => {
 	const [model, setModel] = React.useState<string | null>(MODELS[0].value);
 
 	const setQuestions = useQuestionsStore((state) => state.setQuestions);
+	const setCost = useQuestionsStore((state) => state.setCost);
 
 	const mutation = useMutation({
 		mutationKey: INTERVIEW_MUTATION_KEY,
 		mutationFn: postInterview,
-		onSuccess: (questions, parameters) =>
-			setQuestions(parameters.role, questions),
+		onSuccess: (questions, parameters) => {
+			setQuestions(parameters.role, questions.questions);
+			setCost(questions.cost);
+		},
 	});
 
 	const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {

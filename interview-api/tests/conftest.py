@@ -15,7 +15,8 @@ Three problems have to be solved before either endpoint can be exercised:
 
 3. Nothing may reach the paid API. get_questions and get_answers are replaced on
    the main module, not on the service modules, because that is where the
-   handlers resolve the names from.
+   handlers resolve the names from. Both return (result, cost), and a bare model
+   would unpack as a 1-tuple of its own fields rather than fail loudly.
 """
 
 import os
@@ -29,6 +30,10 @@ import main
 from schema.schemas import Answers, Questions
 
 VALID_ROLE = "Software Engineer"
+
+# Both services return (result, cost). The value is arbitrary but non-zero and
+# not round, so a test asserting on it cannot pass by accident.
+FAKE_COST = 0.000255
 
 
 def make_questions(count: int = 10) -> Questions:
@@ -86,14 +91,14 @@ def no_rate_limit():
 
 @pytest.fixture
 def questions_spy(monkeypatch):
-    spy = ServiceSpy(make_questions())
+    spy = ServiceSpy((make_questions(), FAKE_COST))
     monkeypatch.setattr(main, "get_questions", spy)
     return spy
 
 
 @pytest.fixture
 def answers_spy(monkeypatch):
-    spy = ServiceSpy(make_answers([1]))
+    spy = ServiceSpy((make_answers([1]), FAKE_COST))
     monkeypatch.setattr(main, "get_answers", spy)
     return spy
 

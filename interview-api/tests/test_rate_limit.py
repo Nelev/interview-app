@@ -70,7 +70,10 @@ def test_guardrail_rejections_do_consume_quota(client, questions_spy, limited, r
     # request by the time they reject it. This is the opposite of the schema
     # rejections above, and the distinction is easy to get wrong: the limit
     # protects spend, and a guardrail rejection has already cost a slot.
-    codes = [client.post("/interview", json={"role": role}).status_code for _ in range(15)]
+    codes = [
+        client.post("/interview", json={"role": role}).status_code
+        for _ in range(15)
+    ]
 
     assert codes[:10] == [422] * 10
     assert 429 in codes[10:]

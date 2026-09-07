@@ -64,7 +64,11 @@ class TestAnswerBounds:
     def test_a_rating_outside_the_scale_is_rejected(self, rating):
         with pytest.raises(Exception):
             Answers.model_validate(
-                {"answers": [{"id": 1, "rating": rating, "suggested_improvements": "x"}]}
+                {
+                    "answers": [
+                        {"id": 1, "rating": rating, "suggested_improvements": "x"}
+                    ]
+                }
             )
 
     def test_the_answer_text_is_not_echoed_back(self):

@@ -3,7 +3,10 @@ export type Question = {
 	question: string;
 };
 
-export type InterviewApiResponse = { response: { questions: Question[] } };
+export type InterviewApiResponse = {
+	response: { questions: Question[] };
+	cost: number;
+};
 
 export type InterviewParameters = {
 	role: string;
@@ -23,7 +26,10 @@ export type AnswerResponse = {
 	rating: number;
 	suggestedImprovements: string;
 };
-export type AnswersApiResponse = { response: { answers: AnswerResponse[] } };
+export type AnswersApiResponse = {
+	response: { answers: AnswerResponse[] };
+	cost: number;
+};
 
 /** One answered question sent to /answers for evaluation. */
 export type SubmittedAnswer = {

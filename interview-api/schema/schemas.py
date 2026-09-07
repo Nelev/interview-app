@@ -14,8 +14,6 @@ class InterviewRequest(BaseModel):
     )
 
     role: str
-    # Defaulted so the parameters stay optional for a caller that only has a
-    # role, matching every other field below.
     model: str = "openai/gpt-4o-mini"
     difficulty: Difficulty = "medium"
     frequency_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
@@ -33,6 +31,7 @@ class Question(BaseModel):
 class Questions(BaseModel):
     model_config = ConfigDict(extra="forbid")
     questions: list[Question]
+
 
 class AnswerRequest(BaseModel):
     model_config = ConfigDict(

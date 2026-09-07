@@ -42,7 +42,7 @@ def post_interview(request: Request, payload: InterviewRequest):
         raise HTTPException(status_code=422, detail=error_message)
     if basic_injection_check(payload.role):
         raise HTTPException(status_code=422, detail="Invalid input detected.")
-    response = get_questions(
+    response, call_cost = get_questions(
         payload.role,
         payload.model,
         payload.difficulty,
@@ -51,7 +51,7 @@ def post_interview(request: Request, payload: InterviewRequest):
         payload.frequency_penalty,
         payload.presence_penalty,
     )
-    return {"response": response}
+    return {"response": response, "cost": call_cost}
 
 @app.post("/answers")
 @limiter.limit("10/minute")
@@ -78,5 +78,5 @@ def post_answers(request: Request, payload: AnswerRequest):
         if basic_injection_check(answer_text):
             raise HTTPException(status_code=422, detail="Invalid input detected.")
 
-    response = get_answers(payload.role, payload.answers)
-    return {"response": response}
+    response, call_cost = get_answers(payload.role, payload.answers)
+    return {"response": response, "cost": call_cost}

@@ -11,11 +11,15 @@ const EvaluateAnswersButton = () => {
 	const questions = useQuestionsStore((state) => state.questions);
 	const answers = useQuestionsStore((state) => state.answers);
 	const setEvaluations = useQuestionsStore((state) => state.setEvaluations);
+	const setCost = useQuestionsStore((state) => state.setCost);
 
 	const mutation = useMutation({
 		mutationKey: EVALUATE_MUTATION_KEY,
 		mutationFn: postAnswers,
-		onSuccess: (evaluations) => setEvaluations(evaluations),
+		onSuccess: (result) => {
+			setEvaluations(result.evaluations);
+			setCost(result.cost);
+		},
 	});
 
 	const submitted = questions

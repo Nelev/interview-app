@@ -5,7 +5,7 @@ from typing import get_args
 import pytest
 
 from schema.schemas import Difficulty
-from tests.conftest import VALID_ROLE
+from tests.conftest import FAKE_COST, VALID_ROLE
 
 # Stated here rather than read from the schema on purpose: pinning the defaults
 # is what test_omitted_parameters_use_the_declared_defaults exists to do, and a
@@ -24,13 +24,37 @@ class TestContract:
 
         assert result.status_code == 200
         payload = result.json()
-        assert list(payload) == ["response"]
+        assert list(payload) == ["response", "cost"]
         assert list(payload["response"]) == ["questions"]
         assert len(payload["response"]["questions"]) == 10
-        assert payload["response"]["questions"][0] == {"id": 1, "question": "Question 1?"}
+        assert payload["response"]["questions"][0] == {
+            "id": 1,
+            "question": "Question 1?",
+        }
 
     def test_role_only_request_is_enough(self, client, questions_spy):
         assert client.post("/interview", json={"role": VALID_ROLE}).status_code == 200
+
+    def test_reports_the_cost_of_the_call(self, client, questions_spy):
+        result = client.post("/interview", json=body())
+
+        assert result.json()["cost"] == FAKE_COST
+
+    def test_an_unmeasured_cost_is_reported_as_null(self, client, monkeypatch):
+        # A provider that omits usage.cost is not an error: the questions were
+        # generated and billed. None has to survive to the client as null rather
+        # than becoming a zero, which would read as a free call.
+        import main
+
+        from tests.conftest import ServiceSpy, make_questions
+
+        monkeypatch.setattr(
+            main, "get_questions", ServiceSpy((make_questions(), None))
+        )
+        result = client.post("/interview", json=body())
+
+        assert result.status_code == 200
+        assert result.json()["cost"] is None
 
 
 class TestRoleValidation:
