@@ -13,7 +13,7 @@ const ANSWERS_URL = `${API_BASE_URL}/answers`;
 
 const postInterview = async (
 	parameters: InterviewParameters,
-): Promise<Question[]> => {
+): Promise<{ questions: Question[]; cost: number }> => {
 	const response = await fetch(API_URL, {
 		method: "POST",
 		headers: {
@@ -27,13 +27,13 @@ const postInterview = async (
 	}
 
 	const data = (await response.json()) as InterviewApiResponse;
-	return data.response.questions;
+	return { questions: data.response.questions, cost: data.cost };
 };
 
 const postAnswers = async (payload: {
 	role: string;
 	answers: SubmittedAnswer[];
-}): Promise<AnswerResponse[]> => {
+}): Promise<{ evaluations: AnswerResponse[]; cost: number }> => {
 	const response = await fetch(ANSWERS_URL, {
 		method: "POST",
 		headers: {
@@ -65,7 +65,7 @@ const postAnswers = async (payload: {
 		);
 	}
 
-	return evaluations;
+	return { evaluations, cost: data.cost };
 };
 
 export { postAnswers, postInterview };

@@ -2,7 +2,7 @@
 
 import pytest
 
-from tests.conftest import VALID_ROLE, answer
+from tests.conftest import FAKE_COST, VALID_ROLE, answer
 
 
 def body(**overrides) -> dict:
@@ -19,6 +19,13 @@ class TestContract:
         assert evaluations == [
             {"id": 1, "rating": 4, "suggestedImprovements": "Be specific about 1."}
         ]
+
+    def test_reports_the_cost_of_the_call(self, client, answers_spy):
+        # One call evaluates the whole batch, so this is one figure for every
+        # answer sent, not a cost per answer.
+        result = client.post("/answers", json=body())
+
+        assert result.json()["cost"] == FAKE_COST
 
     def test_the_payload_reaches_the_service_unchanged(self, client, answers_spy):
         answers = [answer(1), answer(2, "I used Postgres with read replicas.")]

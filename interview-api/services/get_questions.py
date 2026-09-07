@@ -81,7 +81,12 @@ def get_questions(
     ]
 
     response = get_completion(params, messages)
+    # cost is an OpenRouter addition rather than an SDK field - it survives
+    # only because the SDK allows extra keys - so a provider that omits it
+    # would raise AttributeError on a call that already succeeded and was
+    # billed. None means unmeasured, which is not the same as zero.
+    call_cost = getattr(response.usage, "cost", None)
     questions = Questions.model_validate_json(
         response.choices[0].message.content
     )
-    return questions
+    return questions, call_cost

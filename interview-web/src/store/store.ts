@@ -26,6 +26,7 @@ const useQuestionsStore = create(
 			answers: {} as Record<number, string>,
 			/** Evaluations returned by the API, keyed by Question.id. */
 			evaluations: {} as Record<number, AnswerResponse>,
+			cost: 0 as number,
 		},
 		(set) => ({
 			// Answers are cleared alongside the questions: ids are only unique
@@ -47,8 +48,12 @@ const useQuestionsStore = create(
 						results.map((result) => [result.id, result]),
 					),
 				}),
+			// Accumulates rather than replaces: the sidebar reports the cost of
+			// the whole session, not of the last call.
+			setCost: (callCost: number) =>
+				set((state) => ({ cost: state.cost + callCost })),
 			clear: () =>
-				set({ role: "", questions: [], answers: {}, evaluations: {} }),
+				set({ role: "", questions: [], answers: {}, evaluations: {}, cost: 0 }),
 		}),
 	),
 );
