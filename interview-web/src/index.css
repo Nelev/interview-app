@@ -16,6 +16,11 @@
 	--color-sidebar-primary: var(--sidebar-primary);
 	--color-sidebar-foreground: var(--sidebar-foreground);
 	--color-sidebar: var(--sidebar);
+	--color-rating-1: var(--rating-1);
+	--color-rating-2: var(--rating-2);
+	--color-rating-3: var(--rating-3);
+	--color-rating-4: var(--rating-4);
+	--color-rating-5: var(--rating-5);
 	--color-chart-5: var(--chart-5);
 	--color-chart-4: var(--chart-4);
 	--color-chart-3: var(--chart-3);
@@ -67,6 +72,14 @@
 	--border: oklch(0.922 0 0);
 	--input: oklch(0.922 0 0);
 	--ring: oklch(0.708 0 0);
+	/* Answer ratings, 1 to 5. Its own ramp rather than the chart tokens, which
+	   run blue to red for the sliders and have no green end. Lightness climbs
+	   with the rating so the scale survives red-green colour blindness. */
+	--rating-1: oklch(0.55 0.2 25);
+	--rating-2: oklch(0.58 0.17 45);
+	--rating-3: oklch(0.62 0.14 85);
+	--rating-4: oklch(0.56 0.15 135);
+	--rating-5: oklch(0.52 0.16 150);
 	--chart-1: oklch(0.87 0 0);
 	--chart-2: oklch(0.556 0 0);
 	--chart-3: oklch(0.439 0 0);
@@ -107,6 +120,13 @@
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
 	--ring: oklch(0.78 0.14 178);
+	/* Each stop is tuned for even perceived lightness: amber at the same L as
+	   red reads brighter, so 3 sits higher than 1. */
+	--rating-1: oklch(0.65 0.2 25);
+	--rating-2: oklch(0.7 0.17 45);
+	--rating-3: oklch(0.8 0.14 90);
+	--rating-4: oklch(0.78 0.15 130);
+	--rating-5: oklch(0.75 0.16 150);
 	/* A perceptual ramp: chart-2 (blue) to chart-5 (red) through amber, so
 	   color-mix() between the ends stays even. */
 	--chart-1: oklch(0.78 0.14 178);
