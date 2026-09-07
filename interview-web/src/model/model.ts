@@ -5,7 +5,8 @@ export type Question = {
 
 export type InterviewApiResponse = {
 	response: { questions: Question[] };
-	cost: number;
+	/** null when the provider did not report a cost. Not the same as zero. */
+	cost: number | null;
 };
 
 export type InterviewParameters = {
@@ -28,7 +29,8 @@ export type AnswerResponse = {
 };
 export type AnswersApiResponse = {
 	response: { answers: AnswerResponse[] };
-	cost: number;
+	/** null when the provider did not report a cost. Not the same as zero. */
+	cost: number | null;
 };
 
 /** One answered question sent to /answers for evaluation. */
