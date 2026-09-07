@@ -6,6 +6,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import Rating from "@/components/ui/rating";
 import { Textarea } from "@/components/ui/textarea";
 import type { Question } from "@/model/model";
 import { useQuestionsStore } from "@/store/store.ts";
@@ -73,12 +74,6 @@ const QuestionCard = ({ question, index }: QuestionCardProps) => {
 								</>
 							)}
 						</CollapsibleTrigger>
-						{evaluation !== undefined && (
-							<span className="ml-2 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs tabular-nums">
-								{evaluation.rating}/5
-								<span className="sr-only"> rating</span>
-							</span>
-						)}
 						<CollapsibleContent>
 							<form onSubmit={handleSubmit} className="space-y-2 pb-1">
 								<label className="sr-only" htmlFor={textareaId}>
@@ -115,6 +110,9 @@ const QuestionCard = ({ question, index }: QuestionCardProps) => {
 								)}
 						</CollapsibleContent>
 					</div>
+					{evaluation !== undefined && (
+						<Rating rating={evaluation.rating} className="mt-0.5 shrink-0" />
+					)}
 				</div>
 			</Collapsible>
 		</li>
