@@ -9,6 +9,24 @@ export type InterviewApiResponse = {
 	cost: number | null;
 };
 
+/** The generation dials, owned by the store so the sidebar and the composer
+ *  can be in different parts of the tree. */
+export type Settings = {
+	model: string;
+	difficulty: string;
+	temperature: number;
+	topP: number;
+	frequencyPenalty: number;
+	presencePenalty: number;
+};
+
+/** One turn in the transcript. A discriminated union rather than a string,
+ *  because an assistant turn can carry questions that render as cards. */
+export type ChatMessage =
+	| { id: string; role: "user"; kind: "text"; text: string }
+	| { id: string; role: "assistant"; kind: "text"; text: string }
+	| { id: string; role: "assistant"; kind: "questions"; questions: Question[] };
+
 export type InterviewParameters = {
 	role: string;
 	temperature: number;

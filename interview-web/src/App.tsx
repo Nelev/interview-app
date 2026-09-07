@@ -1,186 +1,26 @@
-import { useMutationState } from "@tanstack/react-query";
-import { CircleAlert, ClipboardList, SearchX, Sparkles } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { Question } from "@/model/model";
-import { useQuestionsStore } from "@/store/store.ts";
-import EvaluateAnswersButton from "./components/EvaluateAnswersButton.tsx";
-import { INTERVIEW_MUTATION_KEY } from "./components/GenerateQuestionsForm.tsx";
-import QuestionCard from "./components/QuestionCard.tsx";
+import Composer from "./components/Composer.tsx";
+import MessageList from "./components/MessageList.tsx";
 import BaseLayout from "./pages/BaseLayout.tsx";
 
-type RequestStatus = "idle" | "pending" | "success" | "error";
-
-type QuestionListProps = {
-	questions: Question[];
-	role: string;
-	answeredCount: number;
-};
-
-const EmptyState = () => (
-	<div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
-		<div className="flex size-12 items-center justify-center rounded-full bg-muted">
-			<ClipboardList className="size-6 text-muted-foreground" />
-		</div>
-		<h2 className="font-semibold text-xl tracking-tight">No questions yet</h2>
-		<p className="max-w-sm text-muted-foreground text-[0.9375rem] leading-relaxed">
-			Enter a job title in the sidebar and choose{" "}
-			<span className="font-medium text-foreground">Ask</span> to generate the
-			questions you are most likely to be asked.
-		</p>
-	</div>
-);
-
 /**
- * The model returned no questions, which is how it reports input that is not a
- * job role - the strict output schema has no field for an error message, so an
- * empty list is the only rejection it can express.
+ * The chat shell: a scrolling transcript with the composer pinned beneath it.
  *
- * Distinguished from EmptyState by the mutation having succeeded: the same
- * empty array otherwise looks identical to never having asked.
+ * min-h-0 on the scrolling region is what makes that work. A flex child's
+ * default min-height is auto, so without it the transcript grows to fit its
+ * content, pushes the form down and takes the composer off screen.
+ *
+ * The request states live in the transcript rather than here - a pending call
+ * is a placeholder message, an error is a message, and an unrecognised role is
+ * a message. Replacing the whole pane would hide the history the user is
+ * reading.
  */
-const RejectedState = ({ role }: { role: string }) => (
-	<div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
-		<div className="flex size-12 items-center justify-center rounded-full bg-muted">
-			<SearchX className="size-6 text-muted-foreground" />
-		</div>
-		<h2 className="font-semibold text-xl tracking-tight">
-			That does not look like a job title
-		</h2>
-		<p className="max-w-sm text-muted-foreground text-[0.9375rem] leading-relaxed">
-			No questions could be generated
-			{role !== "" && (
-				<>
-					{" for "}
-					<span className="font-medium text-foreground">{role}</span>
-				</>
-			)}
-			. Try a recognised role such as{" "}
-			<span className="font-medium text-foreground">Software Engineer</span> or{" "}
-			<span className="font-medium text-foreground">Data Scientist</span>.
-		</p>
-	</div>
-);
-
-const LoadingState = () => (
-	<>
-		<div className="mb-6 space-y-2">
-			<Skeleton className="h-4 w-40" />
-			<Skeleton className="h-7 w-64" />
-		</div>
-		<Separator className="mb-6" />
-		<ul className="space-y-3">
-			{["a", "b", "c", "d", "e"].map((id, index) => (
-				<li
-					key={id}
-					className="flex gap-4 rounded-lg border bg-card p-4"
-					// Stagger the pulse so the group reads as loading, not frozen.
-					style={{ animationDelay: `${index * 80}ms` }}
-				>
-					<Skeleton className="size-7 shrink-0 rounded-full" />
-					<div className="flex-1 space-y-2 pt-1">
-						<Skeleton className="h-3.5 w-full" />
-						<Skeleton className="h-3.5 w-4/5" />
-					</div>
-				</li>
-			))}
-		</ul>
-	</>
-);
-
-const ErrorState = () => (
-	<output className="mt-8 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-		<CircleAlert className="mt-0.5 size-5 shrink-0 text-destructive" />
-		<div className="space-y-1">
-			<p className="font-medium text-[0.9375rem]">
-				Could not generate questions
-			</p>
-			<p className="text-muted-foreground text-sm leading-relaxed">
-				The response could not be read. This usually means the answer was cut
-				short — try again from the sidebar.
-			</p>
-		</div>
-	</output>
-);
-
-const QuestionList = ({
-	questions,
-	role,
-	answeredCount,
-}: QuestionListProps) => (
-	<>
-		<header className="mb-6">
-			<div className="flex items-center gap-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-				<Sparkles className="size-4" />
-				<span>Generated for</span>
-				<span className="font-medium text-foreground">{role}</span>
-			</div>
-			<h2 className="mt-1.5 font-semibold text-2xl tracking-tight">
-				Interview questions
-			</h2>
-			<p className="mt-1 text-muted-foreground text-sm">
-				{questions.length} question{questions.length === 1 ? "" : "s"} you are
-				most likely to be asked
-				{answeredCount > 0 && (
-					<span className="text-foreground">
-						{" "}
-						&middot; {answeredCount} of {questions.length} answered
-					</span>
-				)}
-				.
-			</p>
-		</header>
-		<Separator className="mb-6" />
-		<ol className="space-y-3">
-			{questions.map((question, index) => (
-				<QuestionCard key={question.id} question={question} index={index} />
-			))}
-		</ol>
-		<EvaluateAnswersButton />
-	</>
-);
-
 function App() {
-	// Data comes from the store, which outlives both the mutation and the
-	// sidebar. One selector per field: returning an object literal here would
-	// create a new identity every render, which zustand v5 warns or loops on
-	// unless wrapped in useShallow.
-	const role = useQuestionsStore((state) => state.role);
-	const questions = useQuestionsStore((state) => state.questions);
-	const answeredCount = useQuestionsStore(
-		(state) => Object.keys(state.answers).length,
-	);
-
-	// Status stays with react-query, which owns the lifecycle of the request.
-	const statuses = useMutationState<RequestStatus>({
-		filters: { mutationKey: INTERVIEW_MUTATION_KEY },
-		select: (mutation) => mutation.state.status,
-	});
-	const status = statuses.at(-1) ?? "idle";
-
 	return (
 		<BaseLayout>
-			<div
-				aria-busy={status === "pending"}
-				aria-live="polite"
-				className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-10"
-			>
-				{status === "pending" ? (
-					<LoadingState />
-				) : status === "error" ? (
-					<ErrorState />
-				) : questions.length > 0 ? (
-					<QuestionList
-						questions={questions}
-						role={role}
-						answeredCount={answeredCount}
-					/>
-				) : status === "success" ? (
-					<RejectedState role={role} />
-				) : (
-					<EmptyState />
-				)}
+			<div className="min-h-0 flex-1 overflow-y-auto">
+				<MessageList />
 			</div>
+			<Composer />
 		</BaseLayout>
 	);
 }

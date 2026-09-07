@@ -7,6 +7,11 @@ import type {
 	SubmittedAnswer,
 } from "@/model/model";
 
+// Lives here rather than in a component: App reads the request status through
+// useMutationState and the composer owns the mutation, so neither should have
+// to import from the other.
+const INTERVIEW_MUTATION_KEY = ["interview"] as const;
+
 const API_BASE_URL = "http://localhost:8000";
 const API_URL = `${API_BASE_URL}/interview`;
 const ANSWERS_URL = `${API_BASE_URL}/answers`;
@@ -68,4 +73,4 @@ const postAnswers = async (payload: {
 	return { evaluations, cost: data.cost };
 };
 
-export { postAnswers, postInterview };
+export { INTERVIEW_MUTATION_KEY, postAnswers, postInterview };

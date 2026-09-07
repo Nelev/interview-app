@@ -14,7 +14,9 @@ const BaseLayout = ({ children }: BaseLayoutProps) => {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-			<SidebarInset>
+			{/* h-svh with an inner min-h-0 column: without it the scrolling child
+			    grows past the viewport and the composer walks off screen. */}
+			<SidebarInset className="flex h-svh flex-col overflow-hidden">
 				<SidebarTrigger />
 				{children}
 			</SidebarInset>

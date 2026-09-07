@@ -14,7 +14,7 @@ import {
 	SidebarHeader,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import GenerateQuestionsForm from "./GenerateQuestionsForm";
+import InterviewSettings from "./InterviewSettings";
 import SessionCost from "./SessionCost";
 
 const AppSidebar = () => {
@@ -27,13 +27,13 @@ const AppSidebar = () => {
 				<Collapsible defaultOpen className="group/collapsible">
 					<SidebarGroup>
 						<SidebarGroupLabel render={<CollapsibleTrigger />}>
-							Common interview questions
+							Generation settings
 							<ChevronDown className="ml-auto transition-transform group-data-open/collapsible:rotate-180" />
 						</SidebarGroupLabel>
 						<CollapsibleContent>
 							<SidebarGroupContent>
 								<SidebarMenuItem>
-									<GenerateQuestionsForm />
+									<InterviewSettings />
 								</SidebarMenuItem>
 							</SidebarGroupContent>
 						</CollapsibleContent>
