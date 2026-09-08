@@ -12,13 +12,17 @@ import type {
 // to import from the other.
 const INTERVIEW_MUTATION_KEY = ["interview"] as const;
 
+// Mirrors MAX_JOB_DESCRIPTION_LENGTH in guardrails.py. Checked on the client
+// so pasting a long posting fails before the round trip rather than after.
+const MAX_JOB_DESCRIPTION_LENGTH = 10000;
+
 const API_BASE_URL = "http://localhost:8000";
 const API_URL = `${API_BASE_URL}/interview`;
 const ANSWERS_URL = `${API_BASE_URL}/answers`;
 
 const postInterview = async (
 	parameters: InterviewParameters,
-): Promise<{ questions: Question[]; cost: number | null }> => {
+): Promise<{ role: string; questions: Question[]; cost: number | null }> => {
 	const response = await fetch(API_URL, {
 		method: "POST",
 		headers: {
@@ -32,7 +36,11 @@ const postInterview = async (
 	}
 
 	const data = (await response.json()) as InterviewApiResponse;
-	return { questions: data.response.questions, cost: data.cost };
+	return {
+		role: data.response.role,
+		questions: data.response.questions,
+		cost: data.cost,
+	};
 };
 
 const postAnswers = async (payload: {
@@ -73,4 +81,9 @@ const postAnswers = async (payload: {
 	return { evaluations, cost: data.cost };
 };
 
-export { INTERVIEW_MUTATION_KEY, postAnswers, postInterview };
+export {
+	INTERVIEW_MUTATION_KEY,
+	MAX_JOB_DESCRIPTION_LENGTH,
+	postAnswers,
+	postInterview,
+};

@@ -13,7 +13,9 @@ class InterviewRequest(BaseModel):
         extra="forbid",
     )
 
-    role: str
+    # The whole posting. The role is no longer supplied by the caller - it is
+    # read out of the description by the model and returned in Questions.
+    job_description: str
     model: str = "openai/gpt-4o-mini"
     difficulty: Difficulty = "medium"
     frequency_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
@@ -29,7 +31,15 @@ class Question(BaseModel):
 
 
 class Questions(BaseModel):
+    # role carries what the model read the posting as hiring for. It is here
+    # rather than derived on the client because /answers needs a role to set
+    # its expert persona, and re-sending the whole description on every
+    # evaluation costs about a quarter more per call, forever.
+    #
+    # Strict structured outputs require every property in "required" and reject
+    # "default", so this cannot be made optional - see the note on Answer.
     model_config = ConfigDict(extra="forbid")
+    role: str
     questions: list[Question]
 
 

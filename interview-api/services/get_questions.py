@@ -58,14 +58,14 @@ def get_completion(params, messages):
 
 
 def get_questions(
-    role: str,
+    job_description: str,
     model: str,
     difficulty: str,
     temperature: float,
     top_p: float,
     frequency_penalty: float,
     presence_penalty: float,
-) -> Questions:
+) -> tuple[Questions, float | None]:
 
     params = set_open_params(
         model=model,
@@ -75,9 +75,20 @@ def get_questions(
         presence_penalty=presence_penalty
     )
 
+    # The description goes last and is fenced. Instructions before untrusted
+    # data is the ordering that holds up best against text in the description
+    # trying to redirect the model, and the markers give the prompt something
+    # to point at when it says which part is data.
+    user_message = (
+        f"difficulty: {difficulty}\n"
+        f"---\n"
+        f"{job_description}\n"
+        f"---"
+    )
+
     messages = [
         {"role": "system", "content": questions_system_prompt},
-        {"role": "user", "content": f"Job title: {role}, difficulty: {difficulty}"},
+        {"role": "user", "content": user_message},
     ]
 
     response = get_completion(params, messages)

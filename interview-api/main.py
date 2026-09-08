@@ -4,6 +4,7 @@ from guardrails.guardrails import (
     basic_injection_check,
     validate_answer_batch,
     validate_answer_input,
+    validate_job_description_input,
     validate_role_input,
 )
 from schema.schemas import AnswerRequest, InterviewRequest
@@ -37,13 +38,18 @@ app.add_middleware(
 @limiter.limit("10/minute")
 @limiter.limit("200/day")
 def post_interview(request: Request, payload: InterviewRequest):
-    is_valid, error_message = validate_role_input(payload.role)
+    is_valid, error_message = validate_job_description_input(
+        payload.job_description
+    )
     if not is_valid:
         raise HTTPException(status_code=422, detail=error_message)
-    if basic_injection_check(payload.role):
+    # Eight literal substrings against up to 10,000 characters of prose from
+    # outside. It catches a careless attempt and nothing more - the strict
+    # output schema is what actually holds here.
+    if basic_injection_check(payload.job_description):
         raise HTTPException(status_code=422, detail="Invalid input detected.")
     response, call_cost = get_questions(
-        payload.role,
+        payload.job_description,
         payload.model,
         payload.difficulty,
         payload.temperature,

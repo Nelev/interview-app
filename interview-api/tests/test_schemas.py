@@ -80,6 +80,9 @@ class TestAnswerBounds:
 
 class TestQuestionsAcceptsRejection:
     def test_an_empty_list_is_valid(self):
-        # This is how the prompt reports input that is not a job role - the
-        # schema has no field for an error message.
-        assert Questions.model_validate({"questions": []}).questions == []
+        # This is how the prompt reports input that is not a job description -
+        # the schema has no field for an error message. role is required, so
+        # the rejection carries an empty one rather than omitting it.
+        rejection = Questions.model_validate({"role": "", "questions": []})
+        assert rejection.questions == []
+        assert rejection.role == ""

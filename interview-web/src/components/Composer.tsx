@@ -1,7 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { ArrowUp } from "lucide-react";
 import React from "react";
-import { INTERVIEW_MUTATION_KEY, postInterview } from "@/api/assistant";
+import {
+	INTERVIEW_MUTATION_KEY,
+	MAX_JOB_DESCRIPTION_LENGTH,
+	postInterview,
+} from "@/api/assistant";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuestionsStore } from "@/store/store.ts";
@@ -32,8 +36,10 @@ const Composer = () => {
 	const mutation = useMutation({
 		mutationKey: INTERVIEW_MUTATION_KEY,
 		mutationFn: postInterview,
-		onSuccess: (result, parameters) => {
-			setQuestions(parameters.role, result.questions);
+		onSuccess: (result) => {
+			// The role comes back from the API rather than from what was sent:
+			// the caller no longer supplies one.
+			setQuestions(result.role, result.questions);
 			setCost(result.cost);
 			appendMessage(
 				result.questions.length > 0
@@ -41,13 +47,14 @@ const Composer = () => {
 							id: newId(),
 							role: "assistant",
 							kind: "questions",
+							jobRole: result.role,
 							questions: result.questions,
 						}
 					: {
 							id: newId(),
 							role: "assistant",
 							kind: "text",
-							text: "That does not look like a job title. Try a recognised role such as Software Engineer or Data Scientist.",
+							text: "That does not look like a job description. Paste the posting, or name the role you want to practise for.",
 						},
 			);
 		},
@@ -72,17 +79,16 @@ const Composer = () => {
 		element.style.overflowY = wanted > MAX_ROWS_HEIGHT ? "auto" : "hidden";
 	};
 
+	const tooLong = draft.length > MAX_JOB_DESCRIPTION_LENGTH;
+
 	const send = () => {
 		const text = draft.trim();
-		if (!text || mutation.isPending) {
+		if (!text || tooLong || mutation.isPending) {
 			return;
 		}
 
 		appendMessage({ id: newId(), role: "user", kind: "text", text });
-		// The API takes a job title, so the message is sent as the role. Anything
-		// conversational comes back as an empty question list, which is rendered
-		// as the rejection message above.
-		mutation.mutate({ role: text, ...settings });
+		mutation.mutate({ jobDescription: text, ...settings });
 
 		setDraft("");
 		if (textareaRef.current) {
@@ -125,7 +131,7 @@ const Composer = () => {
 						resize(event.target);
 					}}
 					onKeyDown={handleKeyDown}
-					placeholder="Enter a job title, e.g. Senior Backend Engineer"
+					placeholder="Paste a job description, or name a role"
 					rows={1}
 					// Deliberately not disabled while pending: losing the field
 					// mid-sentence is worse than allowing a queued draft.
@@ -134,12 +140,25 @@ const Composer = () => {
 				<Button
 					type="submit"
 					size="icon"
-					disabled={draft.trim() === "" || mutation.isPending}
+					disabled={draft.trim() === "" || tooLong || mutation.isPending}
 					aria-label="Send message"
 				>
 					<ArrowUp />
 				</Button>
 			</div>
+			{/* Shown from 80% of the cap: a counter on a two-word role is noise,
+			    and a silent 422 after pasting a long posting is worse. */}
+			{draft.length > MAX_JOB_DESCRIPTION_LENGTH * 0.8 && (
+				<p
+					className={`mx-auto mt-1.5 w-full max-w-3xl text-right text-xs tabular-nums ${
+						tooLong ? "text-destructive" : "text-muted-foreground"
+					}`}
+				>
+					{draft.length.toLocaleString()} /{" "}
+					{MAX_JOB_DESCRIPTION_LENGTH.toLocaleString()}
+					{tooLong && " - too long to send"}
+				</p>
+			)}
 		</form>
 	);
 };

@@ -57,7 +57,7 @@ def get_completion(params, messages):
     return response
 
 
-def get_answers(role: str, answers: list) -> Answers:
+def get_answers(role: str, answers: list) -> tuple[Answers, float | None]:
 
     params = set_open_params()
     messages = [

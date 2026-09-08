@@ -31,17 +31,27 @@ from schema.schemas import Answers, Questions
 
 VALID_ROLE = "Software Engineer"
 
+# /interview takes a posting now. Short enough to read in a failure message,
+# long enough to be a description rather than a title.
+VALID_JOB_DESCRIPTION = (
+    "We are hiring a Senior Backend Engineer to own our payments service. "
+    "Python, Postgres and Kafka, exactly-once delivery, 8+ years."
+)
+
 # Both services return (result, cost). The value is arbitrary but non-zero and
 # not round, so a test asserting on it cannot pass by accident.
 FAKE_COST = 0.000255
 
 
-def make_questions(count: int = 10) -> Questions:
+def make_questions(count: int = 10, role: str = VALID_ROLE) -> Questions:
+    # role is part of the output schema now: the model reads it out of the
+    # description so /answers has a persona without re-sending the posting.
     return Questions.model_validate(
         {
+            "role": role,
             "questions": [
                 {"id": i, "question": f"Question {i}?"} for i in range(1, count + 1)
-            ]
+            ],
         }
     )
 

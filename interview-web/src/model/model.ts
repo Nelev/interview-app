@@ -4,7 +4,10 @@ export type Question = {
 };
 
 export type InterviewApiResponse = {
-	response: { questions: Question[] };
+	/** role is what the model read the posting as hiring for. Empty string is
+	 *  how it reports text that is not a job description, alongside an empty
+	 *  question list. */
+	response: { role: string; questions: Question[] };
 	/** null when the provider did not report a cost. Not the same as zero. */
 	cost: number | null;
 };
@@ -25,10 +28,20 @@ export type Settings = {
 export type ChatMessage =
 	| { id: string; role: "user"; kind: "text"; text: string }
 	| { id: string; role: "assistant"; kind: "text"; text: string }
-	| { id: string; role: "assistant"; kind: "questions"; questions: Question[] };
+	| {
+			id: string;
+			role: "assistant";
+			kind: "questions";
+			/** The job title the API read out of the description. Named jobRole
+			 *  because `role` on a message is already the speaker. */
+			jobRole: string;
+			questions: Question[];
+	  };
 
 export type InterviewParameters = {
-	role: string;
+	/** The whole posting, up to 10,000 characters. The role is no longer sent -
+	 *  the API reads it out of this and returns it. */
+	jobDescription: string;
 	temperature: number;
 	topP: number;
 	frequencyPenalty: number;
