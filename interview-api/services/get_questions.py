@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from prompts.questions_system_prompt import questions_system_prompt
 from schema.schemas import Questions
+from services.utils import set_open_params
 
 load_dotenv()
 
@@ -14,26 +15,6 @@ client = OpenAI(
     base_url=OPENAI_BASE_URL,
     api_key=OPENROUTER_API_KEY,
 )
-
-def set_open_params(
-    model="openai/gpt-4o-mini",
-    temperature=1,
-    max_tokens=1500,
-    top_p=1,
-    frequency_penalty=0,
-    presence_penalty=0,
-):
-    """set openai parameters"""
-
-    openai_params = {}
-
-    openai_params["model"] = model
-    openai_params["temperature"] = temperature
-    openai_params["max_tokens"] = max_tokens
-    openai_params["top_p"] = top_p
-    openai_params["frequency_penalty"] = frequency_penalty
-    openai_params["presence_penalty"] = presence_penalty
-    return openai_params
 
 def get_completion(params, messages):
     """GET completion from openai api"""
