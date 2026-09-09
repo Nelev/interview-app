@@ -151,7 +151,7 @@ TEST_CASES = [
         "job": "Python",
         "difficulty": "medium",
         "category": "REJECT",
-        "key_aspects": "The input names a technology, not a position someone is hired for, so the correct output is an empty role and an empty question list. Ten questions were produced anyway. The failure is the classification, not the questions, which are fine in isolation - which is exactly why a judge scoring only question quality will pass this.",
+        "key_aspects": "The input names a technology, not a position someone is hired for, so the correct output is an empty role and an empty questions list"
     },
     {
         "id": 18,

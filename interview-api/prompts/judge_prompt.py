@@ -43,6 +43,13 @@ Evaluate the following response on four dimensions, each scored 1-5.
 4 - Consistent throughout, advice aligns well
 5 - Perfectly consistent, all points reinforce each other
 
+### Diversity (no repetitions, each question is distinct and unique)
+1 - Same question, asked multiple times, or very similar questions
+2 - Some questions are similar or overlap in content
+3 - Mostly distinct questions, but a few minor overlaps
+4 - All questions are distinct and unique, no overlaps
+5 - All questions are distinct, unique, and cover a wide range of relevant topics
+
 ## Output Format
 First provide your reasoning, then score each dimension.
 Use EXACTLY this format:
@@ -51,4 +58,5 @@ REASONING: <your overall assessment>
 Coherence: <score> | <one-sentence justification>
 Relevance: <score> | <one-sentence justification>
 Fluency: <score> | <one-sentence justification>
-Consistency: <score> | <one-sentence justification>"""
+Consistency: <score> | <one-sentence justification>
+Diversity: <score> | <one-sentence justification>"""
