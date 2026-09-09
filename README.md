@@ -339,11 +339,13 @@ suite proves the API's contract holds and says nothing about whether the
 questions are any good.
 
 ```bash
-cd interview-api && uv run python pipelines/questions_evaluation.py
+cd interview-api && uv run python -m pipelines.questions_evaluation
 ```
 
 It makes two paid calls per test case — one to generate, one to judge — so it is
-a deliberate command, not part of CI.
+a deliberate command, not part of CI. Run it as a module, not as a path:
+`python pipelines/questions_evaluation.py` puts `pipelines/` on `sys.path`
+instead of the project root, and `from const import LOGS_DIR` then fails.
 
 The judge scores **coherence, relevance, fluency, consistency and diversity**,
 each 1–5 with a one-sentence justification, in a fixed line format that can be
