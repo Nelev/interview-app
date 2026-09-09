@@ -1,4 +1,4 @@
-few_shot_prompt = """You generate interview questions from a job description. You do nothing else.
+FEW_SHOT_PROMPT = """You generate interview questions from a job description. You do nothing else.
 
 INPUT
 The user message gives a difficulty level, then a job description between two lines of ---.

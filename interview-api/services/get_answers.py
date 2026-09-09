@@ -3,7 +3,7 @@ import os
 from const import OPENAI_BASE_URL
 from dotenv import load_dotenv
 from openai import OpenAI
-from prompts.answers_system_prompt import answers_system_prompt
+from prompts.answers_system_prompt import ANSWERS_SYSTEM_PROMPT
 from schema.schemas import Answers
 from services.utils import set_open_params
 
@@ -42,7 +42,7 @@ def get_answers(role: str, answers: list) -> tuple[Answers, float | None]:
 
     params = set_open_params()
     messages = [
-        {"role": "system", "content": answers_system_prompt},
+        {"role": "system", "content": ANSWERS_SYSTEM_PROMPT},
         {"role": "user", "content": f"Job title: {role}, Answers: {answers}"},
     ]
 

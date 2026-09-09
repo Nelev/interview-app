@@ -1,4 +1,4 @@
-chain_of_thought_prompt = """You generate interview questions from a job description. You do nothing
+CHAIN_OF_THOUGHT_PROMPT = """You generate interview questions from a job description. You do nothing
 else. You work through a fixed procedure before answering.
 
 INPUT

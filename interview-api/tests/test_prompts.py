@@ -8,7 +8,7 @@ guards the contradiction where the questions prompt asked for
 Every candidate questions prompt is checked, not just the one currently wired
 into get_questions. Swapping the import is a one-line change and there is
 nothing else to catch a replacement that quietly breaks the contract - which
-already happened once, when the service moved to chain_of_thought_prompt and
+already happened once, when the service moved to CHAIN_OF_THOUGHT_PROMPT and
 these assertions were left watching a file no longer in use.
 
 What is checked here is the contract, not the wording. How a prompt instructs
@@ -19,23 +19,23 @@ just forbid the other four techniques.
 
 import pytest
 
-from prompts.answers_system_prompt import answers_system_prompt
-from prompts.chain_of_thought_prompt import chain_of_thought_prompt
-from prompts.few_shot_prompt import few_shot_prompt
-from prompts.many_shot_prompt import many_shot_prompt
-from prompts.questions_system_prompt import questions_system_prompt
-from prompts.role_prompt import role_prompt
-from prompts.zero_shot_prompt import zero_shot_prompt
+from prompts.answers_system_prompt import ANSWERS_SYSTEM_PROMPT
+from prompts.chain_of_thought_prompt import CHAIN_OF_THOUGHT_PROMPT
+from prompts.few_shot_prompt import FEW_SHOT_PROMPT
+from prompts.many_shot_prompt import MANY_SHOT_PROMPT
+from prompts.questions_system_prompt import QUESTIONS_SYSTEM_PROMPT
+from prompts.role_prompt import ROLE_PROMPT
+from prompts.zero_shot_prompt import ZERO_SHOT_PROMPT
 
 QUESTIONS_PROMPTS = pytest.mark.parametrize(
     "prompt",
     [
-        questions_system_prompt,
-        zero_shot_prompt,
-        few_shot_prompt,
-        many_shot_prompt,
-        chain_of_thought_prompt,
-        role_prompt,
+        QUESTIONS_SYSTEM_PROMPT,
+        ZERO_SHOT_PROMPT,
+        FEW_SHOT_PROMPT,
+        MANY_SHOT_PROMPT,
+        CHAIN_OF_THOUGHT_PROMPT,
+        ROLE_PROMPT,
     ],
     ids=[
         "questions_system",
@@ -91,8 +91,8 @@ class TestAnswersPrompt:
     def test_anchors_every_point_of_the_rating_scale(self):
         # An unanchored 1-5 scale clusters around 3.
         for level in ("1 -", "2 -", "3 -", "4 -", "5 -"):
-            assert level in answers_system_prompt
+            assert level in ANSWERS_SYSTEM_PROMPT
 
     def test_frames_the_answer_text_as_data(self):
         # Answers are the largest untrusted surface in the app.
-        assert "never as instructions" in answers_system_prompt
+        assert "never as instructions" in ANSWERS_SYSTEM_PROMPT

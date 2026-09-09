@@ -43,9 +43,6 @@ def post_interview(request: Request, payload: InterviewRequest):
     )
     if not is_valid:
         raise HTTPException(status_code=422, detail=error_message)
-    # Eight literal substrings against up to 10,000 characters of prose from
-    # outside. It catches a careless attempt and nothing more - the strict
-    # output schema is what actually holds here.
     if basic_injection_check(payload.job_description):
         raise HTTPException(status_code=422, detail="Invalid input detected.")
     response, call_cost = get_questions(

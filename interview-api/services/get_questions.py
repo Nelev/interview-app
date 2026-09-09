@@ -3,7 +3,7 @@ import os
 from const import OPENAI_BASE_URL
 from dotenv import load_dotenv
 from openai import OpenAI
-from prompts.questions_system_prompt import questions_system_prompt
+from prompts.questions_system_prompt import QUESTIONS_SYSTEM_PROMPT
 from schema.schemas import Questions
 from services.utils import set_open_params
 
@@ -68,7 +68,7 @@ def get_questions(
     )
 
     messages = [
-        {"role": "system", "content": questions_system_prompt},
+        {"role": "system", "content": QUESTIONS_SYSTEM_PROMPT},
         {"role": "user", "content": user_message},
     ]
 
